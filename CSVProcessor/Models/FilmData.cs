@@ -9,4 +9,14 @@ public class FilmData
     public string Budget { get; set; }
     
     public string ReleaseDate { get; set; }
+
+    public FilmData() { }
+    
+    public FilmData(DataFromCsv data)
+    {
+        Id = Guid.NewGuid();
+        Title = data.Title;
+        Budget = data.Budget;
+        ReleaseDate = data.ReleaseDate;
+    }
 }
