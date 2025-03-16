@@ -5,11 +5,11 @@ namespace CSVProcessor.Controllers;
 
 [ApiController]
 [Route("[controller]")]
-public class MainController : ControllerBase
+public class CsvController : ControllerBase
 {
     private readonly CsvProcessService _csvProcessService;
 
-    public MainController(CsvProcessService csvProcessService)
+    public CsvController(CsvProcessService csvProcessService)
     {
         _csvProcessService = csvProcessService;
     }
@@ -19,9 +19,10 @@ public class MainController : ControllerBase
     {
         var filePath = Path.GetTempFileName();
         
-        var stream = new FileStream(filePath, FileMode.Create);
-        
-        await file.CopyToAsync(stream);
+        await using (var stream = new FileStream(filePath, FileMode.Create))
+        {
+            await file.CopyToAsync(stream);
+        }
 
         await _csvProcessService.ReadCsv(filePath);
         
