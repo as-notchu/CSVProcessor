@@ -1,6 +1,7 @@
 using System.Globalization;
 using CsvHelper;
 using CSVProcessor.Models;
+using EFCore.BulkExtensions;
 using CsvContext = CSVProcessor.Database.CsvContext;
 
 namespace CSVProcessor.Services;
@@ -31,7 +32,6 @@ public class CsvProcessService
             films.Add(new FilmData(data));
         }
         
-        await _csvContext.AddRangeAsync(films);
-        await _csvContext.SaveChangesAsync();
+        await _csvContext.BulkInsertAsync(films);
     }
 }
