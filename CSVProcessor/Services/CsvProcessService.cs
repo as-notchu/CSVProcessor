@@ -24,11 +24,13 @@ public class CsvProcessService
         var reader = new CsvReader(streamReader, CultureInfo.InvariantCulture);
         
         var result = reader.GetRecords<DataFromCsv>().ToList();
+        
         List<FilmData> films = new List<FilmData>();
 
         foreach (var data in result)
         {
             _logger.LogInformation($"Film: {data.Title}, Budget: {data.Budget}, ReleaseDate: {data.ReleaseDate}");
+            
             films.Add(new FilmData(data));
         }
         

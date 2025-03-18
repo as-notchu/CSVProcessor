@@ -9,7 +9,9 @@ using CsvContext = CSVProcessor.Database.CsvContext;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.WebHost.UseUrls("http://localhost:5025");
+
 builder.Services.AddControllers();
+
 builder.Services.Configure<DatabaseOptions>(builder.Configuration.GetSection(nameof(DatabaseOptions)));
 
 builder.Services.AddScoped<CsvProcessService>();
@@ -17,6 +19,8 @@ builder.Services.AddScoped<CsvProcessService>();
 builder.Services.AddDbContext<CsvContext>(options =>
 {
     var databaseOptions = builder.Configuration.GetSection(nameof(DatabaseOptions)).Get<DatabaseOptions>();
+    
+    if (databaseOptions is null) throw new NullReferenceException($"Make Sure To add DatabaseOptions");
     
     options.UseNpgsql(databaseOptions.ConnectionString);
 });
@@ -36,6 +40,7 @@ builder.Host.UseSerilog(Log.Logger);
 
 
 var app = builder.Build();
+
 app.MapControllers();
 
 app.Run();
