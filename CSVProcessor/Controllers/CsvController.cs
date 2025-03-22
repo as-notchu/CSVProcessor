@@ -28,5 +28,16 @@ public class CsvController : ControllerBase
         
         return Ok("CSV processed");
     }
+
+        [HttpGet("getcsv")]
+        public async Task<IActionResult> GetCsv()
+        {
+            var fileStream = await _csvProcessService.GetCsvFileFromDb();
+            
+            return File(fileStream, "text/csv", "films.csv");
+        }
+        
+        
+        
     
 }

@@ -2,6 +2,7 @@ using System.Globalization;
 using CsvHelper;
 using CSVProcessor.Models;
 using EFCore.BulkExtensions;
+using Microsoft.EntityFrameworkCore;
 using CsvContext = CSVProcessor.Database.CsvContext;
 
 namespace CSVProcessor.Services;
@@ -35,5 +36,23 @@ public class CsvProcessService
         }
         
         await _csvContext.BulkInsertAsync(films);
+    }
+
+    public async Task<FileStream> GetCsvFileFromDb()
+    {
+        
+        var films = await _csvContext.Films.ToListAsync();
+        
+        var filePath = Directory.GetCurrentDirectory() + "/films.csv";
+        
+        using (var writer = new StreamWriter(filePath))
+            
+        using (var csv = new CsvWriter(writer, CultureInfo.InvariantCulture))
+        {
+            await csv.WriteRecordsAsync(films);
+        }
+
+        return new FileStream(filePath, FileMode.Open, FileAccess.Read);
+
     }
 }
