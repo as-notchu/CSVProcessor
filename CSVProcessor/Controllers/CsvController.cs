@@ -1,6 +1,7 @@
 using CSVProcessor.Helpers;
 using CSVProcessor.Services;
 using Microsoft.AspNetCore.Mvc;
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace CSVProcessor.Controllers;
 
@@ -18,6 +19,13 @@ public class CsvController : ControllerBase
     }
  
     [HttpPost]
+    [SwaggerOperation(
+        Summary = "Upload films from CSV",
+        Description = "Extracts all films from csv and saves it to DB"
+        )]
+    [ProducesResponseType(typeof(string),200)]
+    [ProducesResponseType(400)]
+    [ProducesResponseType(500)]
     public async Task<IActionResult> ProcessCsv(IFormFile file)
     {
         var filePath = Path.GetTempFileName();
@@ -38,6 +46,13 @@ public class CsvController : ControllerBase
     }
 
     [HttpGet]
+    [SwaggerOperation(
+        Summary = "Download films to csv from database",
+        Description = "Extracts all films from database to csv file"
+        )]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(500)]
+    [ProducesResponseType(400)]
     public async Task<IActionResult> GetCsv()
     {
         var result = await _csvService.GetCsvFileFromDb();

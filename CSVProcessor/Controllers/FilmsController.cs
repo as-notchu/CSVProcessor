@@ -3,6 +3,7 @@ using CSVProcessor.Helpers;
 using CSVProcessor.Models;
 using CSVProcessor.Services;
 using Microsoft.AspNetCore.Mvc;
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace CSVProcessor.Controllers;
 
@@ -22,6 +23,11 @@ public class FilmsController : ControllerBase
     }
     
     [HttpGet]
+    [SwaggerOperation(
+        Summary = "Returns all films",
+        Description = "Returns all films as IEnumerable<FilmData>"
+        )]
+    [ProducesResponseType(typeof(IEnumerable<FilmData>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetFilms()
     {
         var films = await _dataService.GetFilms();
@@ -30,6 +36,12 @@ public class FilmsController : ControllerBase
     }
 
     [HttpGet("{id}")]
+    [SwaggerOperation(
+        Summary = "Get Film using Guid",
+        Description = "Returns film with requested guid. 404 error if film was not found"
+    )]
+    [ProducesResponseType(typeof(FilmData), 200)]
+    [ProducesResponseType(404)]
     public async Task<IActionResult> GetFilm(Guid id)
     {
         var film = await _dataService.GetFilmById(id);
@@ -43,6 +55,11 @@ public class FilmsController : ControllerBase
     }
 
     [HttpDelete("{id}")]
+    [SwaggerOperation(
+        Summary = "Delete Film using Guid",
+        Description = "Deletes film with requested guid")]
+    [ProducesResponseType(typeof(Unit), 200)]
+    [ProducesResponseType( 404)]
     public async Task<IActionResult> DeleteFilm(Guid id)
     {
 
@@ -53,6 +70,13 @@ public class FilmsController : ControllerBase
     }
 
     [HttpPut("{id}")]
+    [SwaggerOperation(
+        Summary = "Update Film Data using Guid",
+        Description = "Updates film with requested guid. Returns updated film data"
+        )]
+    [ProducesResponseType(404)]
+    [ProducesResponseType(500)]
+    [ProducesResponseType(typeof(FilmData),201)]
     public async Task<IActionResult> UpdateFilm(Guid id, [FromBody] FilmDTO filmDto)
     {
         
@@ -76,6 +100,13 @@ public class FilmsController : ControllerBase
     }
 
     [HttpPost]
+    [SwaggerOperation(
+        Summary = "Create Film Data from DTO",
+        Description = "Creates film data with DTO. Returns created film data. "
+        )]
+    [ProducesResponseType(typeof(FilmData), 201)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    [ProducesResponseType(500)]
     public async Task<IActionResult> AddFilm([FromBody] FilmDTO filmDto)
     {
         var result = await _dataService.AddFilm(filmDto);
