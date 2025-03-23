@@ -24,7 +24,7 @@ public class CsvProcessService
         
         var reader = new CsvReader(streamReader, CultureInfo.InvariantCulture);
         
-        var result = reader.GetRecords<DataFromCsv>().ToList();
+        var result = reader.GetRecords<FilmDTO>().ToList();
         
         List<FilmData> films = new List<FilmData>();
 
