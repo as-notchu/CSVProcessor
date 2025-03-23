@@ -15,6 +15,7 @@ builder.Services.AddControllers();
 builder.Services.Configure<DatabaseOptions>(builder.Configuration.GetSection(nameof(DatabaseOptions)));
 
 builder.Services.AddScoped<CsvProcessService>();
+builder.Services.AddScoped<DataService>();
 
 builder.Services.AddDbContext<CsvContext>(options =>
 {

@@ -7,11 +7,11 @@ namespace CSVProcessor.Controllers;
 [Route("[controller]")]
 public class CsvController : ControllerBase
 {
-    private readonly CsvProcessService _csvProcessService;
+    private readonly CsvProcessService _csvService;
 
-    public CsvController(CsvProcessService csvProcessService)
+    public CsvController(CsvProcessService csvService)
     {
-        _csvProcessService = csvProcessService;
+        _csvService = csvService;
     }
  
     [HttpPost("process")]
@@ -24,7 +24,7 @@ public class CsvController : ControllerBase
             await file.CopyToAsync(stream);
         }
 
-        await _csvProcessService.ReadCsv(filePath);
+        await _csvService.ReadCsv(filePath);
         
         return Ok("CSV processed");
     }
@@ -32,12 +32,12 @@ public class CsvController : ControllerBase
         [HttpGet("getcsv")]
         public async Task<IActionResult> GetCsv()
         {
-            var fileStream = await _csvProcessService.GetCsvFileFromDb();
+            var fileStream = await _csvService.GetCsvFileFromDb();
             
             return File(fileStream, "text/csv", "films.csv");
         }
-        
-        
+
+       
         
     
 }
