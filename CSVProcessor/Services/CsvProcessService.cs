@@ -41,7 +41,7 @@ public class CsvProcessService
     public async Task<FileStream> GetCsvFileFromDb()
     {
         
-        var films = await _csvContext.Films.ToListAsync();
+        var films = await _csvContext.Films.AsNoTracking().ToListAsync();
         
         var filePath = Directory.GetCurrentDirectory() + "/films.csv";
         
@@ -55,4 +55,6 @@ public class CsvProcessService
         return new FileStream(filePath, FileMode.Open, FileAccess.Read);
 
     }
+
+    
 }
