@@ -48,7 +48,7 @@ public class DataController : ControllerBase
 
         var result = await _dataService.DeleteFilm(id);
 
-        return result.ToActionResult();
+        return result.ToActionResult(_logger);
 
     }
 
@@ -68,7 +68,7 @@ public class DataController : ControllerBase
 
         if (!result.Success)
         {
-            return result.ToActionResult();
+            return result.ToActionResult(_logger);
         }
 
         return CreatedAtAction(nameof(GetFilm), new { id = result.Data.Id }, result.Data);
@@ -82,7 +82,7 @@ public class DataController : ControllerBase
 
         if (!result.Success)
         {
-            return result.ToActionResult();
+            return result.ToActionResult(_logger);
         }
 
         return CreatedAtAction(nameof(GetFilm), new { id = result.Data }, result);
