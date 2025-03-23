@@ -7,21 +7,21 @@ using Microsoft.AspNetCore.Mvc;
 namespace CSVProcessor.Controllers;
 
 [ApiController]
-[Route("[controller]")]
-public class DataController : ControllerBase
+[Route("api/[controller]")]
+public class FilmsController : ControllerBase
 {
-    private readonly ILogger<DataController> _logger;
+    private readonly ILogger<FilmsController> _logger;
     
     private readonly DataService _dataService;
     
 
-    public DataController(ILogger<DataController> logger, DataService dataService)
+    public FilmsController(ILogger<FilmsController> logger, DataService dataService)
     {
         _logger = logger;
         _dataService = dataService;
     }
     
-    [HttpGet("getfilms")]
+    [HttpGet]
     public async Task<IActionResult> GetFilms()
     {
         var films = await _dataService.GetFilms();
@@ -29,7 +29,7 @@ public class DataController : ControllerBase
         return Ok(films);
     }
 
-    [HttpGet("getfilm/{id}")]
+    [HttpGet("{id}")]
     public async Task<IActionResult> GetFilm(Guid id)
     {
         var film = await _dataService.GetFilmById(id);
@@ -42,7 +42,7 @@ public class DataController : ControllerBase
         return Ok(film);
     }
 
-    [HttpDelete("deletefilm/{id}")]
+    [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteFilm(Guid id)
     {
 
@@ -52,7 +52,7 @@ public class DataController : ControllerBase
 
     }
 
-    [HttpPut("updatefilm/{id}")]
+    [HttpPut("{id}")]
     public async Task<IActionResult> UpdateFilm(Guid id, [FromBody] FilmDTO filmDto)
     {
         
@@ -75,7 +75,7 @@ public class DataController : ControllerBase
 
     }
 
-    [HttpPost("addfilm")]
+    [HttpPost]
     public async Task<IActionResult> AddFilm([FromBody] FilmDTO filmDto)
     {
         var result = await _dataService.AddFilm(filmDto);
