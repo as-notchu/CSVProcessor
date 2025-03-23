@@ -1,20 +1,23 @@
+using CSVProcessor.Helpers;
 using CSVProcessor.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CSVProcessor.Controllers;
 
 [ApiController]
-[Route("[controller]")]
+[Route("api/[controller]")]
 public class CsvController : ControllerBase
 {
     private readonly CsvProcessService _csvService;
 
-    public CsvController(CsvProcessService csvService)
+    private readonly ILogger<CsvController> _logger;
+    public CsvController(CsvProcessService csvService, ILogger<CsvController> logger)
     {
         _csvService = csvService;
+        _logger = logger;
     }
  
-    [HttpPost("process")]
+    [HttpPost]
     public async Task<IActionResult> ProcessCsv(IFormFile file)
     {
         var filePath = Path.GetTempFileName();
@@ -24,18 +27,28 @@ public class CsvController : ControllerBase
             await file.CopyToAsync(stream);
         }
 
-        await _csvService.ReadCsv(filePath);
+        var result = await _csvService.ReadCsv(filePath);
+
+        if (!result.Success)
+        {
+            return result.ToActionResult(_logger);
+        }
         
         return Ok("CSV processed");
     }
 
-        [HttpGet("getcsv")]
-        public async Task<IActionResult> GetCsv()
+    [HttpGet]
+    public async Task<IActionResult> GetCsv()
+    {
+        var result = await _csvService.GetCsvFileFromDb();
+
+        if (!result.Success || result.Data == null)
         {
-            var fileStream = await _csvService.GetCsvFileFromDb();
-            
-            return File(fileStream, "text/csv", "films.csv");
+            return result.ToActionResult(_logger);
         }
+        
+        return File(result.Data, "text/csv", "films.csv");
+    }
 
        
         

@@ -1,5 +1,6 @@
 using System.Globalization;
 using CsvHelper;
+using CSVProcessor.Enum;
 using CSVProcessor.Models;
 using EFCore.BulkExtensions;
 using Microsoft.EntityFrameworkCore;
@@ -18,13 +19,18 @@ public class CsvProcessService
         _logger = logger;
     }
 
-    public async Task ReadCsv(string filePath)
+    public async Task<ServiceResult<bool>> ReadCsv(string filePath)
     {
         var streamReader = new StreamReader(filePath);
         
         var reader = new CsvReader(streamReader, CultureInfo.InvariantCulture);
         
         var result = reader.GetRecords<FilmDTO>().ToList();
+        
+        if (result.Count == 0)
+        {
+            return ServiceResult<bool>.Fail(ServiceErrorCodes.CantParseData, $"Can't parse file");
+        }
         
         List<FilmData> films = new List<FilmData>();
 
@@ -34,14 +40,29 @@ public class CsvProcessService
             
             films.Add(new FilmData(data));
         }
+
+        try
+        {
+            await _csvContext.BulkInsertAsync(films);
+        }
+        catch (Exception e)
+        {
+            return ServiceResult<bool>.Fail(ServiceErrorCodes.SaveFailed, e.Message);
+        }
         
-        await _csvContext.BulkInsertAsync(films);
+        return ServiceResult<bool>.Ok(true);
+        
     }
 
-    public async Task<FileStream> GetCsvFileFromDb()
+    public async Task<ServiceResult<FileStream>> GetCsvFileFromDb()
     {
         
         var films = await _csvContext.Films.AsNoTracking().ToListAsync();
+
+        if (films.Count == 0)
+        {
+            return ServiceResult<FileStream>.Fail(ServiceErrorCodes.Unknown, $"Cant get films from db or db is empty");
+        }
         
         var filePath = Directory.GetCurrentDirectory() + "/films.csv";
         
@@ -49,10 +70,18 @@ public class CsvProcessService
             
         using (var csv = new CsvWriter(writer, CultureInfo.InvariantCulture))
         {
-            await csv.WriteRecordsAsync(films);
+            try
+            {
+                await csv.WriteRecordsAsync(films);
+            }
+            catch (Exception e)
+            {
+                return ServiceResult<FileStream>.Fail(ServiceErrorCodes.SaveFailed, e.Message);
+            }
+            
         }
 
-        return new FileStream(filePath, FileMode.Open, FileAccess.Read);
+        return ServiceResult<FileStream>.Ok(new FileStream(filePath, FileMode.Open, FileAccess.Read));
 
     }
 

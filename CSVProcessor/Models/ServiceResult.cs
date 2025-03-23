@@ -6,7 +6,7 @@ public class ServiceResult<T>
 {
     public bool Success { get; set; }
     public string? Error { get; set; }
-    public DataServiceErrorCode ErrorCode { get; set; } = DataServiceErrorCode.None;
+    public ServiceErrorCodes ErrorCodes { get; set; } = ServiceErrorCodes.None;
     public T? Data { get; set; }
 
     public static ServiceResult<T> Ok(T data) => new()
@@ -15,10 +15,10 @@ public class ServiceResult<T>
         Data = data
     };
 
-    public static ServiceResult<T> Fail(DataServiceErrorCode code, string message) => new()
+    public static ServiceResult<T> Fail(ServiceErrorCodes codes, string message) => new()
     {
         Success = false,
-        ErrorCode = code,
+        ErrorCodes = codes,
         Error = message
     };
 }

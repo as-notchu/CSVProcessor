@@ -14,11 +14,12 @@ public static class ServiceResultExtensions
         }
         
         logger.LogError($"Error occured: {result.Error}");
-        return result.ErrorCode switch
+        return result.ErrorCodes switch
         {
-            DataServiceErrorCode.DuplicateId => new ConflictObjectResult(result.Error),
-            DataServiceErrorCode.SaveFailed => new ObjectResult(result.Error) { StatusCode = 500 },
-            DataServiceErrorCode.NotFound => new NotFoundObjectResult(result.Error),
+            ServiceErrorCodes.DuplicateId => new ConflictObjectResult(result.Error),
+            ServiceErrorCodes.SaveFailed => new ObjectResult(result.Error) { StatusCode = 500 },
+            ServiceErrorCodes.NotFound => new NotFoundObjectResult(result.Error),
+            ServiceErrorCodes.CantParseData => new BadRequestObjectResult(result.Error) { StatusCode = 400 },
             _ => new BadRequestObjectResult(result.Error ?? "Unknown error")
         };
     }
@@ -28,11 +29,12 @@ public static class ServiceResultExtensions
             return new OkObjectResult(result.Data);
 
         logger.LogError($"Error occured: {result.Error}");
-        return result.ErrorCode switch
+        return result.ErrorCodes switch
         {
-            DataServiceErrorCode.DuplicateId => new ConflictObjectResult(result.Error),
-            DataServiceErrorCode.SaveFailed => new ObjectResult(result.Error) { StatusCode = 500 },
-            DataServiceErrorCode.NotFound => new NotFoundObjectResult(result.Error),
+            ServiceErrorCodes.DuplicateId => new ConflictObjectResult(result.Error),
+            ServiceErrorCodes.SaveFailed => new ObjectResult(result.Error) { StatusCode = 500 },
+            ServiceErrorCodes.NotFound => new NotFoundObjectResult(result.Error),
+            ServiceErrorCodes.CantParseData => new BadRequestObjectResult(result.Error) { StatusCode = 400 },
             _ => new BadRequestObjectResult(result.Error ?? "Unknown error")
         };
     }

@@ -35,7 +35,7 @@ public class DataService
         if (await _csvContext.Films.AnyAsync(x => x.Id == film.Id))
         {
             return ServiceResult<Guid>.Fail(
-                DataServiceErrorCode.DuplicateId, 
+                ServiceErrorCodes.DuplicateId, 
                 $"Film with id: {film.Id} already exists.");
         }
         
@@ -49,7 +49,7 @@ public class DataService
         }
         catch (Exception e)
         {
-            return ServiceResult<Guid>.Fail(DataServiceErrorCode.SaveFailed, e.Message);
+            return ServiceResult<Guid>.Fail(ServiceErrorCodes.SaveFailed, e.Message);
         }
     }
 
@@ -69,7 +69,7 @@ public class DataService
         var film = await GetFilmById(id);
         
         if (film == null) return ServiceResult<Unit>.Fail(
-            DataServiceErrorCode.NotFound, 
+            ServiceErrorCodes.NotFound, 
             $"Film with id: {id} does not exist.");
 
         try
@@ -80,7 +80,7 @@ public class DataService
         }
         catch (Exception e)
         {
-            return ServiceResult<Unit>.Fail(DataServiceErrorCode.SaveFailed, e.Message);
+            return ServiceResult<Unit>.Fail(ServiceErrorCodes.SaveFailed, e.Message);
         }
         
 
@@ -92,7 +92,7 @@ public class DataService
     {
         var entity = await GetFilmById(film.Id, true);
         
-        if (entity is null) return ServiceResult<FilmData>.Fail(DataServiceErrorCode.NotFound, "Film not found.");
+        if (entity is null) return ServiceResult<FilmData>.Fail(ServiceErrorCodes.NotFound, "Film not found.");
 
         entity.Title = film.Title;
         
@@ -106,7 +106,7 @@ public class DataService
         }
         catch (Exception e)
         {
-            return ServiceResult<FilmData>.Fail(DataServiceErrorCode.SaveFailed, e.Message);
+            return ServiceResult<FilmData>.Fail(ServiceErrorCodes.SaveFailed, e.Message);
         }
         
         return ServiceResult<FilmData>.Ok(film);
