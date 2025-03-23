@@ -1,3 +1,5 @@
+using CSVProcessor.Enum;
+using CSVProcessor.Helpers;
 using CSVProcessor.Models;
 using CSVProcessor.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -44,12 +46,10 @@ public class DataController : ControllerBase
     public async Task<IActionResult> DeleteFilm(Guid id)
     {
 
-        if (await _dataService.DeleteFilm(id))
-        {
-            return Ok($"Film with ID {id} deleted");
-        }       
-        return NotFound($"Film with ID {id} not found");
-        
+        var result = await _dataService.DeleteFilm(id);
+
+        return result.ToActionResult();
+
     }
 
     [HttpPut("updatefilm/{id}")]
@@ -64,11 +64,28 @@ public class DataController : ControllerBase
             ReleaseDate = filmDto.ReleaseDate
         };
          
-        if(!await _dataService.UpdateFilm(filmData)) return NotFound($"Film with ID {id} not found");
+        var result = await _dataService.UpdateFilm(filmData);
 
-        return NoContent();
+        if (!result.Success)
+        {
+            return result.ToActionResult();
+        }
+
+        return CreatedAtAction(nameof(GetFilm), new { id = result.Data.Id }, result.Data);
 
     }
 
+    [HttpPost("addfilm")]
+    public async Task<IActionResult> AddFilm([FromBody] FilmDTO filmDto)
+    {
+        var result = await _dataService.AddFilm(filmDto);
+
+        if (!result.Success)
+        {
+            return result.ToActionResult();
+        }
+
+        return CreatedAtAction(nameof(GetFilm), new { id = result.Data }, result);
+    }
 
 }

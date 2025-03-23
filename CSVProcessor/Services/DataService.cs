@@ -1,4 +1,5 @@
 using CSVProcessor.Database;
+using CSVProcessor.Enum;
 using CSVProcessor.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -27,32 +28,71 @@ public class DataService
         
     }
 
-    public async Task<FilmData?> GetFilmById(Guid id)
+    public async Task<ServiceResult<Guid>> AddFilm(FilmDTO filmData)
     {
-        var film = await _csvContext.Films.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
+        var film = new FilmData(filmData);
+
+        if (await _csvContext.Films.AnyAsync(x => x.Id == film.Id))
+        {
+            return ServiceResult<Guid>.Fail(
+                DataServiceErrorCode.DuplicateId, 
+                $"Film with id: {film.Id} already exists.");
+        }
         
-        return film ?? null;
+        try
+        {
+            await _csvContext.Films.AddAsync(film);
+            
+            await _csvContext.SaveChangesAsync();
+            
+            return ServiceResult<Guid>.Ok(film.Id);
+        }
+        catch (Exception e)
+        {
+            return ServiceResult<Guid>.Fail(DataServiceErrorCode.SaveFailed, e.Message);
+        }
     }
 
-    public async Task<bool> DeleteFilm(Guid id)
-    {
-        var film = await _csvContext.Films.FirstOrDefaultAsync(x => x.Id == id);
-        
-        if (film == null) return false;
-        
-        _csvContext.Films.Remove(film);
-        
-        await _csvContext.SaveChangesAsync();
 
-        return true;
+    public async Task<FilmData?> GetFilmById(Guid id, bool tracking = false)
+    {
+        var query = _csvContext.Films.AsQueryable();
+
+        if (!tracking)
+            query = query.AsNoTracking();
+
+        return await query.FirstOrDefaultAsync(f => f.Id == id);
+    }
+
+    public async Task<ServiceResult<Unit>> DeleteFilm(Guid id)
+    {
+        var film = await GetFilmById(id);
+        
+        if (film == null) return ServiceResult<Unit>.Fail(
+            DataServiceErrorCode.NotFound, 
+            $"Film with id: {id} does not exist.");
+
+        try
+        {
+            _csvContext.Films.Remove(film);
+        
+            await _csvContext.SaveChangesAsync();
+        }
+        catch (Exception e)
+        {
+            return ServiceResult<Unit>.Fail(DataServiceErrorCode.SaveFailed, e.Message);
+        }
+        
+
+        return ServiceResult<Unit>.Ok(new Unit());
 
     }
 
-    public async Task<bool> UpdateFilm(FilmData film)
+    public async Task<ServiceResult<FilmData>> UpdateFilm(FilmData film)
     {
-        var entity = await _csvContext.Films.FindAsync(film.Id);
+        var entity = await GetFilmById(film.Id, true);
         
-        if (entity is null) return false;
+        if (entity is null) return ServiceResult<FilmData>.Fail(DataServiceErrorCode.NotFound, "Film not found.");
 
         entity.Title = film.Title;
         
@@ -60,9 +100,16 @@ public class DataService
         
         entity.Budget = film.Budget;
 
-        await _csvContext.SaveChangesAsync();
+        try
+        {
+            await _csvContext.SaveChangesAsync();
+        }
+        catch (Exception e)
+        {
+            return ServiceResult<FilmData>.Fail(DataServiceErrorCode.SaveFailed, e.Message);
+        }
         
-        return true;
+        return ServiceResult<FilmData>.Ok(film);
 
     }
  }

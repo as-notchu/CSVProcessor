@@ -12,11 +12,12 @@ public class FilmData
 
     public FilmData() { }
     
-    public FilmData(DataFromCsv data)
+    public FilmData(FilmDTO data)
     {
         Id = Guid.NewGuid();
         Title = data.Title;
         Budget = data.Budget;
         ReleaseDate = data.ReleaseDate;
     }
+    
 }
