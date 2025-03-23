@@ -1,4 +1,4 @@
-using CSVProcessor.Enum;
+
 using CSVProcessor.Helpers;
 using CSVProcessor.Models;
 using CSVProcessor.Services;
@@ -71,7 +71,7 @@ public class DataController : ControllerBase
             return result.ToActionResult(_logger);
         }
 
-        return CreatedAtAction(nameof(GetFilm), new { id = result.Data.Id }, result.Data);
+        return CreatedAtAction(nameof(GetFilm), new { id = result.Data!.Id }, result.Data);
 
     }
 
@@ -85,7 +85,7 @@ public class DataController : ControllerBase
             return result.ToActionResult(_logger);
         }
 
-        return CreatedAtAction(nameof(GetFilm), new { id = result.Data }, result);
+        return CreatedAtAction(nameof(GetFilm), new { id = result.Data }, result.Data);
     }
 
 }
