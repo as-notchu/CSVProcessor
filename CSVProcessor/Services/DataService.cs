@@ -32,11 +32,11 @@ public class DataService
     {
         var film = new FilmData(filmData);
 
-        if (await _csvContext.Films.AnyAsync(x => x.Id == film.Id))
+        if (await _csvContext.Films.AnyAsync(x => x.Title == film.Title))
         {
             return ServiceResult<Guid>.Fail(
-                ServiceErrorCodes.DuplicateId, 
-                $"Film with id: {film.Id} already exists.");
+                ServiceErrorCodes.Duplicate,
+                $"Film with title '{film.Title}' already exists.");
         }
         
         try
