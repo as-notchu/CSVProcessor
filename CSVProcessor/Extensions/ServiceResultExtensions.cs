@@ -14,7 +14,7 @@ public static class ServiceResultExtensions
         }
         
         logger.LogError($"Error occured: {result.Error}");
-        return result.ErrorCodes switch
+        return result.ErrorCode switch
         {
             ServiceErrorCodes.Duplicate => new ConflictObjectResult(result.Error),
             ServiceErrorCodes.SaveFailed => new ObjectResult(result.Error) { StatusCode = 500 },
@@ -29,7 +29,7 @@ public static class ServiceResultExtensions
             return new OkObjectResult(result.Data);
 
         logger.LogError($"Error occured: {result.Error}");
-        return result.ErrorCodes switch
+        return result.ErrorCode switch
         {
             ServiceErrorCodes.Duplicate => new ConflictObjectResult(result.Error),
             ServiceErrorCodes.SaveFailed => new ObjectResult(result.Error) { StatusCode = 500 },

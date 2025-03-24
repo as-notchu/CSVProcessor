@@ -94,7 +94,7 @@ public class DataService
         var filmResult = await GetFilmById(id);
         if (!filmResult.Success)
         {
-            return ServiceResult<Unit>.Fail(filmResult.ErrorCodes, filmResult.Error!);
+            return ServiceResult<Unit>.Fail(filmResult.ErrorCode, filmResult.Error!);
         }
 
         var film = filmResult.Data;
@@ -125,7 +125,7 @@ public class DataService
 
         if (!films.Success)
         {
-            return ServiceResult<FilmData>.Fail(films.ErrorCodes, films.Error!);
+            return ServiceResult<FilmData>.Fail(films.ErrorCode, films.Error!);
         }
         
         var entity = films.Data!;
