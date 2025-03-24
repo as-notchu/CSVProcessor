@@ -19,13 +19,21 @@ public class DataService
     
     
     
-    public async Task<IEnumerable<FilmData>> GetFilms()
+    public async Task<ServiceResult<IEnumerable<FilmData>>> GetFilms()
     {
+        List<FilmData> films = new List<FilmData>();
         
-        var films = await _csvContext.Films.AsNoTracking().ToListAsync();
+        try
+        {
+            films = await _csvContext.Films.AsNoTracking().ToListAsync();
+        }
+        catch (Exception e)
+        {
+            return ServiceResult<IEnumerable<FilmData>>.Fail(ServiceErrorCodes.Unknown, e.Message);
+        }
         
-        return films;
-        
+        return ServiceResult<IEnumerable<FilmData>>.Ok(films);
+
     }
 
     public async Task<ServiceResult<Guid>> AddFilm(FilmDTO filmData)
@@ -54,19 +62,42 @@ public class DataService
     }
 
 
-    public async Task<FilmData?> GetFilmById(Guid id, bool tracking = false)
+    public async Task<ServiceResult<FilmData>> GetFilmById(Guid id, bool tracking = false)
     {
         var query = _csvContext.Films.AsQueryable();
 
         if (!tracking)
             query = query.AsNoTracking();
+        
+        FilmData? filmData;
+        try
+        {
+            filmData = await query.FirstOrDefaultAsync(x => x.Id == id);
+        }
+        catch (Exception e)
+        {
+            return ServiceResult<FilmData>.Fail(ServiceErrorCodes.Unknown, e.Message);
+        }
+        
 
-        return await query.FirstOrDefaultAsync(f => f.Id == id);
+        if (filmData == null)
+        {
+            return ServiceResult<FilmData>.Fail(ServiceErrorCodes.NotFound, $"Film with id {id} was not found.");
+        }
+        
+        return ServiceResult<FilmData>.Ok(filmData);
+        
     }
 
     public async Task<ServiceResult<Unit>> DeleteFilm(Guid id)
     {
-        var film = await GetFilmById(id);
+        var filmResult = await GetFilmById(id);
+        if (!filmResult.Success)
+        {
+            return ServiceResult<Unit>.Fail(filmResult.ErrorCodes, filmResult.Error!);
+        }
+
+        var film = filmResult.Data;
         
         if (film == null) return ServiceResult<Unit>.Fail(
             ServiceErrorCodes.NotFound, 
@@ -90,10 +121,15 @@ public class DataService
 
     public async Task<ServiceResult<FilmData>> UpdateFilm(FilmData film)
     {
-        var entity = await GetFilmById(film.Id, true);
-        
-        if (entity is null) return ServiceResult<FilmData>.Fail(ServiceErrorCodes.NotFound, "Film not found.");
+        var films = await GetFilmById(film.Id, true);
 
+        if (!films.Success)
+        {
+            return ServiceResult<FilmData>.Fail(films.ErrorCodes, films.Error!);
+        }
+        
+        var entity = films.Data!;
+        
         entity.Title = film.Title;
         
         entity.ReleaseDate = film.ReleaseDate;
@@ -109,7 +145,7 @@ public class DataService
             return ServiceResult<FilmData>.Fail(ServiceErrorCodes.SaveFailed, e.Message);
         }
         
-        return ServiceResult<FilmData>.Ok(film);
+        return ServiceResult<FilmData>.Ok(entity);
 
     }
  }
