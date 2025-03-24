@@ -43,7 +43,11 @@ public class CsvProcessService
 
         try
         {
-            await _csvContext.BulkInsertAsync(films);
+            await _csvContext.BulkInsertOrUpdateAsync(films, new BulkConfig
+            {
+                UpdateByProperties = new List<string> { "Title" }
+            });
+
         }
         catch (Exception e)
         {
