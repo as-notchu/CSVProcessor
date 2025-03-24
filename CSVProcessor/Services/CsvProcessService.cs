@@ -19,7 +19,7 @@ public class CsvProcessService
         _logger = logger;
     }
 
-    public async Task<ServiceResult<bool>> ReadCsv(string filePath)
+    public async Task<ServiceResult<bool>> ProcessCsv(string filePath)
     {
         var streamReader = new StreamReader(filePath);
         

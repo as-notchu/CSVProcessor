@@ -35,7 +35,7 @@ public class CsvController : ControllerBase
             await file.CopyToAsync(stream);
         }
 
-        var result = await _csvService.ReadCsv(filePath);
+        var result = await _csvService.ProcessCsv(filePath);
 
         if (!result.Success)
         {
