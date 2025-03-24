@@ -16,7 +16,7 @@ public static class ServiceResultExtensions
         logger.LogError($"Error occured: {result.Error}");
         return result.ErrorCodes switch
         {
-            ServiceErrorCodes.DuplicateId => new ConflictObjectResult(result.Error),
+            ServiceErrorCodes.Duplicate => new ConflictObjectResult(result.Error),
             ServiceErrorCodes.SaveFailed => new ObjectResult(result.Error) { StatusCode = 500 },
             ServiceErrorCodes.NotFound => new NotFoundObjectResult(result.Error),
             ServiceErrorCodes.CantParseData => new BadRequestObjectResult(result.Error) { StatusCode = 400 },
@@ -31,7 +31,7 @@ public static class ServiceResultExtensions
         logger.LogError($"Error occured: {result.Error}");
         return result.ErrorCodes switch
         {
-            ServiceErrorCodes.DuplicateId => new ConflictObjectResult(result.Error),
+            ServiceErrorCodes.Duplicate => new ConflictObjectResult(result.Error),
             ServiceErrorCodes.SaveFailed => new ObjectResult(result.Error) { StatusCode = 500 },
             ServiceErrorCodes.NotFound => new NotFoundObjectResult(result.Error),
             ServiceErrorCodes.CantParseData => new BadRequestObjectResult(result.Error) { StatusCode = 400 },
