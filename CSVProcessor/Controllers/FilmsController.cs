@@ -44,7 +44,7 @@ public class FilmsController : ControllerBase
     [ProducesResponseType(404)]
     public async Task<IActionResult> GetFilm(Guid id)
     {
-        var film = await _dataService.GetFilmById(id);
+        var film = await _dataService.GetFilmDtoById(id);
 
         if (film.Data == null)
         {

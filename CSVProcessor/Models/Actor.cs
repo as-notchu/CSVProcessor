@@ -1,3 +1,5 @@
+using CSVProcessor.Interfaces;
+
 namespace CSVProcessor.Models;
 
 public class Actor

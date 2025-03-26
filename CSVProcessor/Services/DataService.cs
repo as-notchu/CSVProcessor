@@ -2,6 +2,7 @@ using CSVProcessor.Database;
 using CSVProcessor.Enum;
 using CSVProcessor.Interfaces;
 using CSVProcessor.Models;
+using CSVProcessor.Models.DTO;
 using Microsoft.EntityFrameworkCore;
 
 namespace CSVProcessor.Services;
@@ -66,8 +67,35 @@ public class DataService
         }
     }
 
+    public async Task<ServiceResult<FilmDataDTO>> GetFilmDtoById(Guid id, bool tracking = false)
+    {
+        var query = _csvContext.Films.AsQueryable();
 
-    public async Task<ServiceResult<FilmData>> GetFilmById(Guid id, bool tracking = false)
+        if (!tracking)
+            query = query.AsNoTracking();
+        FilmData? film;
+        try
+        {
+            film = await query
+                .Include(x => x.Actors)
+                .FirstOrDefaultAsync(x => x.Id == id);
+        }
+        catch (Exception e)
+        {
+            return ServiceResult<FilmDataDTO>.Fail(ServiceErrorCodes.Unknown, e.Message);
+        }
+
+
+        if (film == null)
+        {
+            return ServiceResult<FilmDataDTO>.Fail(ServiceErrorCodes.NotFound, $"Film not found");
+        }
+        
+        FilmDataDTO filmDto = new FilmDataDTO(film);
+        
+        return ServiceResult<FilmDataDTO>.Ok(filmDto);
+    }
+    public async Task<ServiceResult<FilmData>> GetFilmById(Guid id, bool tracking = false, bool dto = false)
     {
         var query = _csvContext.Films.AsQueryable();
 
@@ -77,7 +105,8 @@ public class DataService
         FilmData? filmData;
         try
         {
-            filmData = await query.FirstOrDefaultAsync(x => x.Id == id);
+            filmData = await _csvContext.Films
+                .FirstOrDefaultAsync(x => x.Id == id);
         }
         catch (Exception e)
         {
