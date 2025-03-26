@@ -1,4 +1,5 @@
 using CsvHelper;
+using CSVProcessor.Interfaces;
 using CSVProcessor.Options;
 using CSVProcessor.Services;
 using CSVProcessor.SwaggerIgnore;
@@ -21,6 +22,7 @@ builder.Services.AddSwaggerGen();
 builder.Services.Configure<DatabaseOptions>(builder.Configuration.GetSection(nameof(DatabaseOptions)));
 
 builder.Services.AddScoped<CsvProcessService>();
+builder.Services.AddScoped<IActorResolver, ActorService>();
 
 builder.Services.AddScoped<DataService>();
 

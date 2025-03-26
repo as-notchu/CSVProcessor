@@ -32,7 +32,7 @@ public class FilmsController : ControllerBase
     {
         var films = await _dataService.GetFilms();
             
-        return Ok(films);
+        return Ok(films.Data);
     }
 
     [HttpGet("{id}")]
@@ -46,12 +46,12 @@ public class FilmsController : ControllerBase
     {
         var film = await _dataService.GetFilmById(id);
 
-        if (film == null)
+        if (film.Data == null)
         {
-            return NotFound($"Film with ID {id} not found");
+            return film.ToActionResult(_logger);
         }
             
-        return Ok(film);
+        return Ok(film.Data);
     }
 
     [HttpDelete("{id}")]
@@ -79,16 +79,8 @@ public class FilmsController : ControllerBase
     [ProducesResponseType(typeof(FilmData),201)]
     public async Task<IActionResult> UpdateFilm(Guid id, [FromBody] FilmDTO filmDto)
     {
-        
-        FilmData filmData = new FilmData()
-        {
-            Id = id,
-            Budget = filmDto.Budget,
-            Title =filmDto.Title,
-            ReleaseDate = filmDto.ReleaseDate
-        };
-         
-        var result = await _dataService.UpdateFilm(filmData);
+
+        var result = await _dataService.UpdateFilm(filmDto, id);
 
         if (!result.Success)
         {

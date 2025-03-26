@@ -1,5 +1,6 @@
 using CSVProcessor.Database;
 using CSVProcessor.Enum;
+using CSVProcessor.Interfaces;
 using CSVProcessor.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,11 +11,15 @@ public class DataService
     private readonly CsvContext _csvContext;
 
     private readonly ILogger<DataService> _logger;
+    
+    private readonly IActorResolver _actorResolver;
+    
 
-    public DataService(CsvContext csvContext, ILogger<DataService> logger)
+    public DataService(CsvContext csvContext, ILogger<DataService> logger, IActorResolver actorResolver)
     {
         _csvContext = csvContext;
         _logger = logger;
+        _actorResolver = actorResolver;
     }
     
     
@@ -119,16 +124,18 @@ public class DataService
 
     }
 
-    public async Task<ServiceResult<FilmData>> UpdateFilm(FilmData film)
+    public async Task<ServiceResult<FilmData>> UpdateFilm(FilmDTO filmDto, Guid id)
     {
-        var films = await GetFilmById(film.Id, true);
+        var film = new FilmData(filmDto);
+        
+        var filmResult = await GetFilmById(id, true);
 
-        if (!films.Success)
+        if (!filmResult.Success)
         {
-            return ServiceResult<FilmData>.Fail(films.ErrorCode, films.Error!);
+            return ServiceResult<FilmData>.Fail(filmResult.ErrorCode, filmResult.Error!);
         }
         
-        var entity = films.Data!;
+        var entity = filmResult.Data!;
         
         entity.Title = film.Title;
         
@@ -136,6 +143,12 @@ public class DataService
         
         entity.Budget = film.Budget;
 
+        entity.Actors.Clear();
+
+        var actorsToAdd = await _actorResolver.GetOrCreateActorsAsync(filmDto.Actors);
+        
+        entity.Actors.AddRange(actorsToAdd);
+        
         try
         {
             await _csvContext.SaveChangesAsync();
@@ -148,4 +161,5 @@ public class DataService
         return ServiceResult<FilmData>.Ok(entity);
 
     }
+    
  }
