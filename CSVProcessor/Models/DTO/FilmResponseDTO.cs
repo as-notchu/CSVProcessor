@@ -2,15 +2,16 @@ using CSVProcessor.Interfaces;
 
 namespace CSVProcessor.Models.DTO;
 
-public class FilmDataDTO
+public class FilmResponseDTO
 {
     public Guid Id { get; }
     public string Title { get; }
     public string Budget { get; }
     public string ReleaseDate { get; }
-    public List<ActorDataDTO> Actors { get; } = new List<ActorDataDTO>();
+    public List<ActorResponseDTO> Actors { get; } = new List<ActorResponseDTO>();
 
-    public FilmDataDTO(FilmData data)
+    
+    public FilmResponseDTO(FilmData data, bool includeActorsFilms = false)
     {
         Id = data.Id;
         Title = data.Title;
@@ -18,18 +19,11 @@ public class FilmDataDTO
         ReleaseDate = data.ReleaseDate;
         foreach (var actor in data.Actors)
         {
-            Actors.Add(new ActorDataDTO()
-            {
-                Id = actor.Id,
-                Name = actor.Name,
-            });
+            Actors.Add(new ActorResponseDTO(actor, includeActorsFilms));
         }
+        
     }
     
 }
 
-public class ActorDataDTO
-{
-    public Guid Id { get; set; }
-    public string Name { get; set; }
-}
+

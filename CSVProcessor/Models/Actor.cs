@@ -1,4 +1,5 @@
 using CSVProcessor.Interfaces;
+using CSVProcessor.Models.DTO;
 
 namespace CSVProcessor.Models;
 
@@ -14,5 +15,13 @@ public class Actor
     {
         Name = name;
         Id = Guid.NewGuid();
+    }
+
+    public Actor(ActorResponseDTO actorResponse)
+    {
+        Id = actorResponse.Id;
+        Name = actorResponse.Name;
+        Films = new List<FilmData>();
+     
     }
 }
