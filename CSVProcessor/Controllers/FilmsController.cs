@@ -1,6 +1,7 @@
 
 using CSVProcessor.Helpers;
 using CSVProcessor.Models;
+using CSVProcessor.Models.DTO;
 using CSVProcessor.Services;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
@@ -31,8 +32,20 @@ public class FilmsController : ControllerBase
     public async Task<IActionResult> GetFilms()
     {
         var films = await _dataService.GetFilms();
-            
-        return Ok(films.Data);
+
+        if (!films.Success)
+        {
+            return films.ToActionResult(_logger);
+        }
+
+        List<FilmDataDTO> filmDTOs = new List<FilmDataDTO>();
+        
+        foreach (var film in films.Data!)
+        {
+            filmDTOs.Add(new FilmDataDTO(film));
+        }
+        
+        return Ok(filmDTOs);
     }
 
     [HttpGet("{id}")]
@@ -44,14 +57,16 @@ public class FilmsController : ControllerBase
     [ProducesResponseType(404)]
     public async Task<IActionResult> GetFilm(Guid id)
     {
-        var film = await _dataService.GetFilmDtoById(id);
-
-        if (film.Data == null)
+        var filmDto = await _dataService.GetFilmById(id, includeActors: true);
+       
+        if (filmDto.Data == null)
         {
-            return film.ToActionResult(_logger);
+            return filmDto.ToActionResult(_logger);
         }
-            
-        return Ok(film.Data);
+        
+        var film = new FilmDataDTO(filmDto.Data);
+        
+        return Ok(film);
     }
 
     [HttpDelete("{id}")]

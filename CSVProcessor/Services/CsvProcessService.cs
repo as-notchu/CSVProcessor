@@ -3,9 +3,11 @@ using CsvHelper;
 using CSVProcessor.Enum;
 using CSVProcessor.Interfaces;
 using CSVProcessor.Models;
+using CSVProcessor.Models.DTO;
 using EFCore.BulkExtensions;
 using Microsoft.EntityFrameworkCore;
 using CsvContext = CSVProcessor.Database.CsvContext;
+using Exception = System.Exception;
 
 namespace CSVProcessor.Services;
 
@@ -53,26 +55,8 @@ public class CsvProcessService
         List<FilmData> films = new List<FilmData>();
 
         var actorsDto = result.SelectMany(x => x.Actors).Distinct().ToList();
-        
-        List<Actor> actorsFromDatabase = await _csvContext.Actors.ToListAsync();
 
-        var actorsDict = actorsFromDatabase.ToDictionary(x => x.Name);
-
-        var allActors = new Dictionary<string, Actor>();
-
-        var actorsToAdd = new List<Actor>();
-        foreach (var actorDto in actorsDto)
-        {
-            if (actorsDict.TryGetValue(actorDto, out var outActor))
-            {
-                allActors[actorDto] = outActor;
-                continue;
-            }
-            var actor = new Actor(actorDto);
-            allActors[actorDto] = actor;
-            actorsToAdd.Add(actor);
-        }
-        _csvContext.Actors.AddRange(actorsToAdd);
+        var allActors = await _actorResolver.GetOrCreateActorsAsync(actorsDto);
         
         foreach (var data in result)
         {
@@ -138,6 +122,13 @@ public class CsvProcessService
             return ServiceResult<FileStream>.Fail(ServiceErrorCodes.Unknown, $"Cant get films from db or db is empty");
         }
         
+        List<FilmDataDTO> filmDTOs = new List<FilmDataDTO>();
+        
+        foreach (var film in films)
+        {
+            filmDTOs.Add(new FilmDataDTO(film));
+        }
+        
         var filePath = Directory.GetCurrentDirectory() + "/films.csv";
         
         using (var writer = new StreamWriter(filePath))
@@ -146,7 +137,7 @@ public class CsvProcessService
         {
             try
             {
-                await csv.WriteRecordsAsync(films);
+                await csv.WriteRecordsAsync(filmDTOs);
             }
             catch (Exception e)
             {

@@ -25,7 +25,7 @@ public class DataService
     
     
     
-    public async Task<ServiceResult<IEnumerable<FilmData>>> GetFilms()
+    public async Task<ServiceResult<List<FilmData>>> GetFilms()
     {
         List<FilmData> films = new List<FilmData>();
         
@@ -35,22 +35,30 @@ public class DataService
         }
         catch (Exception e)
         {
-            return ServiceResult<IEnumerable<FilmData>>.Fail(ServiceErrorCodes.Unknown, e.Message);
+            return ServiceResult<List<FilmData>>.Fail(ServiceErrorCodes.Unknown, e.Message);
         }
         
-        return ServiceResult<IEnumerable<FilmData>>.Ok(films);
+        return ServiceResult<List<FilmData>>.Ok(films);
 
     }
 
     public async Task<ServiceResult<Guid>> AddFilm(FilmDTO filmData)
     {
-        var film = new FilmData(filmData);
-
-        if (await _csvContext.Films.AnyAsync(x => x.Title == film.Title))
+        if (await _csvContext.Films.AnyAsync(x => x.Title == filmData.Title))
         {
             return ServiceResult<Guid>.Fail(
                 ServiceErrorCodes.Duplicate,
-                $"Film with title '{film.Title}' already exists.");
+                $"Film with title '{filmData.Title}' already exists.");
+        }
+
+        var actorTitles = filmData.Actors.Distinct().ToList();
+
+        var allActors = await _actorResolver.GetOrCreateActorsAsync(actorTitles);
+
+        var film = new FilmData(filmData);
+        foreach (var actor in allActors)
+        {
+            film.Actors.Add(actor.Value);
         }
         
         try
@@ -61,47 +69,24 @@ public class DataService
             
             return ServiceResult<Guid>.Ok(film.Id);
         }
+        
         catch (Exception e)
         {
             return ServiceResult<Guid>.Fail(ServiceErrorCodes.SaveFailed, e.Message);
         }
+        
     }
-
-    public async Task<ServiceResult<FilmDataDTO>> GetFilmDtoById(Guid id, bool tracking = false)
+    
+    public async Task<ServiceResult<FilmData>> GetFilmById(Guid id, bool tracking = false, bool includeActors = false)
     {
         var query = _csvContext.Films.AsQueryable();
 
         if (!tracking)
             query = query.AsNoTracking();
-        FilmData? film;
-        try
+        if (!includeActors)
         {
-            film = await query
-                .Include(x => x.Actors)
-                .FirstOrDefaultAsync(x => x.Id == id);
+            query = query.Include(x => x.Actors);
         }
-        catch (Exception e)
-        {
-            return ServiceResult<FilmDataDTO>.Fail(ServiceErrorCodes.Unknown, e.Message);
-        }
-
-
-        if (film == null)
-        {
-            return ServiceResult<FilmDataDTO>.Fail(ServiceErrorCodes.NotFound, $"Film not found");
-        }
-        
-        FilmDataDTO filmDto = new FilmDataDTO(film);
-        
-        return ServiceResult<FilmDataDTO>.Ok(filmDto);
-    }
-    public async Task<ServiceResult<FilmData>> GetFilmById(Guid id, bool tracking = false, bool dto = false)
-    {
-        var query = _csvContext.Films.AsQueryable();
-
-        if (!tracking)
-            query = query.AsNoTracking();
-        
         FilmData? filmData;
         try
         {
@@ -157,7 +142,7 @@ public class DataService
     {
         var film = new FilmData(filmDto);
         
-        var filmResult = await GetFilmById(id, true);
+        var filmResult = await GetFilmById(id, true, true);
 
         if (!filmResult.Success)
         {
@@ -171,39 +156,17 @@ public class DataService
         entity.ReleaseDate = film.ReleaseDate;
         
         entity.Budget = film.Budget;
-
+        
         entity.Actors.Clear();
 
         var actorTitles = film.Actors.Select(x => x.Name).Distinct().ToList();
         
-        List<Actor> actorsFromDatabase = await _csvContext.Actors
-            .Where(x => actorTitles.Contains(x.Name))
-            .ToListAsync();
-
-        var actorsDict = actorsFromDatabase.ToDictionary(x => x.Name);
-
-        var allActors = new Dictionary<string, Actor>();
+        var allActors = await _actorResolver.GetOrCreateActorsAsync(actorTitles);
         
-        var actorsToAdd = new List<Actor>();
-        
-        foreach (var actorDto in actorTitles)
-        {
-            if (actorsDict.TryGetValue(actorDto, out var outActor))
-            {
-                allActors[actorDto] = outActor;
-                continue;
-            }
-            var actor = new Actor(actorDto);
-            allActors[actorDto] = actor;
-            actorsToAdd.Add(actor);
-        }
-        _csvContext.Actors.AddRange(actorsToAdd);
-
         foreach (var actor in allActors.Values)
         {
             entity.Actors.Add(actor);
         }
-        
         
         try
         {
