@@ -90,7 +90,7 @@ public class DataService
         FilmData? filmData;
         try
         {
-            filmData = await _csvContext.Films
+            filmData = await query
                 .FirstOrDefaultAsync(x => x.Id == id);
         }
         catch (Exception e)
