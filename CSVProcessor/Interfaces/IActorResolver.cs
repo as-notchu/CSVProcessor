@@ -4,5 +4,5 @@ namespace CSVProcessor.Interfaces;
 
 public interface IActorResolver
 {
-    public Task<List<Actor>> GetOrCreateActorsAsync(List<string> incomingActorNames);
+    public Task<Dictionary<string, Actor>> GetOrCreateActorsAsync(List<string> incomingActorNames);
 }
