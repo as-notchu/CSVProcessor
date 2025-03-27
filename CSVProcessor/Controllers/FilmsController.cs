@@ -38,11 +38,11 @@ public class FilmsController : ControllerBase
             return films.ToActionResult(_logger);
         }
 
-        List<FilmDataDTO> filmDTOs = new List<FilmDataDTO>();
+        List<FilmResponseDTO> filmDTOs = new List<FilmResponseDTO>();
         
         foreach (var film in films.Data!)
         {
-            filmDTOs.Add(new FilmDataDTO(film));
+            filmDTOs.Add(new FilmResponseDTO(film));
         }
         
         return Ok(filmDTOs);
@@ -64,7 +64,7 @@ public class FilmsController : ControllerBase
             return filmDto.ToActionResult(_logger);
         }
         
-        var film = new FilmDataDTO(filmDto.Data);
+        var film = new FilmResponseDTO(filmDto.Data);
         
         return Ok(film);
     }
@@ -92,10 +92,10 @@ public class FilmsController : ControllerBase
     [ProducesResponseType(404)]
     [ProducesResponseType(500)]
     [ProducesResponseType(typeof(FilmData),201)]
-    public async Task<IActionResult> UpdateFilm(Guid id, [FromBody] FilmDTO filmDto)
+    public async Task<IActionResult> UpdateFilm(Guid id, [FromBody] FilmCreateDTO filmCreateDto)
     {
 
-        var result = await _dataService.UpdateFilm(filmDto, id);
+        var result = await _dataService.UpdateFilm(filmCreateDto, id);
 
         if (!result.Success)
         {
@@ -114,9 +114,9 @@ public class FilmsController : ControllerBase
     [ProducesResponseType(typeof(FilmData), 201)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     [ProducesResponseType(500)]
-    public async Task<IActionResult> AddFilm([FromBody] FilmDTO filmDto)
+    public async Task<IActionResult> AddFilm([FromBody] FilmCreateDTO filmCreateDto)
     {
-        var result = await _dataService.AddFilm(filmDto);
+        var result = await _dataService.AddFilm(filmCreateDto);
 
         if (!result.Success)
         {

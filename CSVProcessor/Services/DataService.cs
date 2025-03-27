@@ -42,20 +42,20 @@ public class DataService
 
     }
 
-    public async Task<ServiceResult<Guid>> AddFilm(FilmDTO filmData)
+    public async Task<ServiceResult<Guid>> AddFilm(FilmCreateDTO filmCreateData)
     {
-        if (await _csvContext.Films.AnyAsync(x => x.Title == filmData.Title))
+        if (await _csvContext.Films.AnyAsync(x => x.Title == filmCreateData.Title))
         {
             return ServiceResult<Guid>.Fail(
                 ServiceErrorCodes.Duplicate,
-                $"Film with title '{filmData.Title}' already exists.");
+                $"Film with title '{filmCreateData.Title}' already exists.");
         }
 
-        var actorTitles = filmData.Actors.Distinct().ToList();
+        var actorTitles = filmCreateData.Actors.Distinct().ToList();
 
         var allActors = await _actorResolver.GetOrCreateActorsAsync(actorTitles);
 
-        var film = new FilmData(filmData);
+        var film = new FilmData(filmCreateData);
         foreach (var actor in allActors)
         {
             film.Actors.Add(actor.Value);
@@ -138,9 +138,9 @@ public class DataService
 
     }
 
-    public async Task<ServiceResult<FilmData>> UpdateFilm(FilmDTO filmDto, Guid id)
+    public async Task<ServiceResult<FilmData>> UpdateFilm(FilmCreateDTO filmCreateDto, Guid id)
     {
-        var film = new FilmData(filmDto);
+        var film = new FilmData(filmCreateDto);
         
         var filmResult = await GetFilmById(id, true, true);
 

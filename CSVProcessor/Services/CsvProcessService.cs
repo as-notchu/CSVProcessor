@@ -33,12 +33,12 @@ public class CsvProcessService
         
         var resultDynamic = reader.GetRecords<dynamic>().ToList();
 
-        var result = new List<FilmDTO>();
+        var result = new List<FilmCreateDTO>();
         foreach (var res in resultDynamic)
         {
             string str = res.Actors;
             
-            result.Add(new FilmDTO()
+            result.Add(new FilmCreateDTO()
             {
                 Title = res.Title,
                 Budget = res.Budget,
@@ -122,11 +122,11 @@ public class CsvProcessService
             return ServiceResult<FileStream>.Fail(ServiceErrorCodes.Unknown, $"Cant get films from db or db is empty");
         }
         
-        List<FilmDataDTO> filmDTOs = new List<FilmDataDTO>();
+        List<FilmResponseDTO> filmDTOs = new List<FilmResponseDTO>();
         
         foreach (var film in films)
         {
-            filmDTOs.Add(new FilmDataDTO(film));
+            filmDTOs.Add(new FilmResponseDTO(film));
         }
         
         var filePath = Directory.GetCurrentDirectory() + "/films.csv";
