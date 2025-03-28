@@ -1,6 +1,8 @@
 using CSVProcessor.Database;
 using CSVProcessor.Enum;
+using CSVProcessor.Interfaces;
 using CSVProcessor.Models;
+using CSVProcessor.Models.DTO;
 using Microsoft.EntityFrameworkCore;
 
 namespace CSVProcessor.Services;
@@ -10,16 +12,20 @@ public class DataService
     private readonly CsvContext _csvContext;
 
     private readonly ILogger<DataService> _logger;
+    
+    private readonly IActorResolver _actorResolver;
+    
 
-    public DataService(CsvContext csvContext, ILogger<DataService> logger)
+    public DataService(CsvContext csvContext, ILogger<DataService> logger, IActorResolver actorResolver)
     {
         _csvContext = csvContext;
         _logger = logger;
+        _actorResolver = actorResolver;
     }
     
     
     
-    public async Task<ServiceResult<IEnumerable<FilmData>>> GetFilms()
+    public async Task<ServiceResult<List<FilmData>>> GetFilms()
     {
         List<FilmData> films = new List<FilmData>();
         
@@ -29,22 +35,30 @@ public class DataService
         }
         catch (Exception e)
         {
-            return ServiceResult<IEnumerable<FilmData>>.Fail(ServiceErrorCodes.Unknown, e.Message);
+            return ServiceResult<List<FilmData>>.Fail(ServiceErrorCodes.Unknown, e.Message);
         }
         
-        return ServiceResult<IEnumerable<FilmData>>.Ok(films);
+        return ServiceResult<List<FilmData>>.Ok(films);
 
     }
 
-    public async Task<ServiceResult<Guid>> AddFilm(FilmDTO filmData)
+    public async Task<ServiceResult<Guid>> AddFilm(FilmCreateDTO filmCreateData)
     {
-        var film = new FilmData(filmData);
-
-        if (await _csvContext.Films.AnyAsync(x => x.Title == film.Title))
+        if (await _csvContext.Films.AnyAsync(x => x.Title == filmCreateData.Title))
         {
             return ServiceResult<Guid>.Fail(
                 ServiceErrorCodes.Duplicate,
-                $"Film with title '{film.Title}' already exists.");
+                $"Film with title '{filmCreateData.Title}' already exists.");
+        }
+
+        var actorTitles = filmCreateData.Actors.Distinct().ToList();
+
+        var allActors = await _actorResolver.GetOrCreateActorsAsync(actorTitles);
+
+        var film = new FilmData(filmCreateData);
+        foreach (var actor in allActors)
+        {
+            film.Actors.Add(actor.Value);
         }
         
         try
@@ -55,24 +69,29 @@ public class DataService
             
             return ServiceResult<Guid>.Ok(film.Id);
         }
+        
         catch (Exception e)
         {
             return ServiceResult<Guid>.Fail(ServiceErrorCodes.SaveFailed, e.Message);
         }
+        
     }
-
-
-    public async Task<ServiceResult<FilmData>> GetFilmById(Guid id, bool tracking = false)
+    
+    public async Task<ServiceResult<FilmData>> GetFilmById(Guid id, bool tracking = false, bool includeActors = false)
     {
         var query = _csvContext.Films.AsQueryable();
 
         if (!tracking)
             query = query.AsNoTracking();
-        
+        if (!includeActors)
+        {
+            query = query.Include(x => x.Actors);
+        }
         FilmData? filmData;
         try
         {
-            filmData = await query.FirstOrDefaultAsync(x => x.Id == id);
+            filmData = await query
+                .FirstOrDefaultAsync(x => x.Id == id);
         }
         catch (Exception e)
         {
@@ -119,23 +138,36 @@ public class DataService
 
     }
 
-    public async Task<ServiceResult<FilmData>> UpdateFilm(FilmData film)
+    public async Task<ServiceResult<FilmData>> UpdateFilm(FilmCreateDTO filmCreateDto, Guid id)
     {
-        var films = await GetFilmById(film.Id, true);
+        var film = new FilmData(filmCreateDto);
+        
+        var filmResult = await GetFilmById(id, true, true);
 
-        if (!films.Success)
+        if (!filmResult.Success)
         {
-            return ServiceResult<FilmData>.Fail(films.ErrorCode, films.Error!);
+            return ServiceResult<FilmData>.Fail(filmResult.ErrorCode, filmResult.Error!);
         }
         
-        var entity = films.Data!;
+        var entity = filmResult.Data!;
         
         entity.Title = film.Title;
         
         entity.ReleaseDate = film.ReleaseDate;
         
         entity.Budget = film.Budget;
+        
+        entity.Actors.Clear();
 
+        var actorTitles = film.Actors.Select(x => x.Name).Distinct().ToList();
+        
+        var allActors = await _actorResolver.GetOrCreateActorsAsync(actorTitles);
+        
+        foreach (var actor in allActors.Values)
+        {
+            entity.Actors.Add(actor);
+        }
+        
         try
         {
             await _csvContext.SaveChangesAsync();
@@ -148,4 +180,5 @@ public class DataService
         return ServiceResult<FilmData>.Ok(entity);
 
     }
+    
  }

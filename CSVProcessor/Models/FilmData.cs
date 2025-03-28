@@ -9,10 +9,12 @@ public class FilmData
     public string Budget { get; set; }
     
     public string ReleaseDate { get; set; }
+    
+    public List<Actor> Actors { get; set; } = new List<Actor>();
 
     public FilmData() { }
     
-    public FilmData(FilmDTO data)
+    public FilmData(FilmCreateDTO data)
     {
         Id = Guid.NewGuid();
         Title = data.Title;

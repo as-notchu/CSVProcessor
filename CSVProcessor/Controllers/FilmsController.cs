@@ -1,6 +1,7 @@
 
 using CSVProcessor.Helpers;
 using CSVProcessor.Models;
+using CSVProcessor.Models.DTO;
 using CSVProcessor.Services;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
@@ -31,8 +32,20 @@ public class FilmsController : ControllerBase
     public async Task<IActionResult> GetFilms()
     {
         var films = await _dataService.GetFilms();
-            
-        return Ok(films);
+
+        if (!films.Success)
+        {
+            return films.ToActionResult(_logger);
+        }
+
+        List<FilmResponseDTO> filmDTOs = new List<FilmResponseDTO>();
+        
+        foreach (var film in films.Data!)
+        {
+            filmDTOs.Add(new FilmResponseDTO(film));
+        }
+        
+        return Ok(filmDTOs);
     }
 
     [HttpGet("{id}")]
@@ -44,13 +57,15 @@ public class FilmsController : ControllerBase
     [ProducesResponseType(404)]
     public async Task<IActionResult> GetFilm(Guid id)
     {
-        var film = await _dataService.GetFilmById(id);
-
-        if (film == null)
+        var filmDto = await _dataService.GetFilmById(id, includeActors: true);
+       
+        if (filmDto.Data == null)
         {
-            return NotFound($"Film with ID {id} not found");
+            return filmDto.ToActionResult(_logger);
         }
-            
+        
+        var film = new FilmResponseDTO(filmDto.Data);
+        
         return Ok(film);
     }
 
@@ -77,18 +92,10 @@ public class FilmsController : ControllerBase
     [ProducesResponseType(404)]
     [ProducesResponseType(500)]
     [ProducesResponseType(typeof(FilmData),201)]
-    public async Task<IActionResult> UpdateFilm(Guid id, [FromBody] FilmDTO filmDto)
+    public async Task<IActionResult> UpdateFilm(Guid id, [FromBody] FilmCreateDTO filmCreateDto)
     {
-        
-        FilmData filmData = new FilmData()
-        {
-            Id = id,
-            Budget = filmDto.Budget,
-            Title =filmDto.Title,
-            ReleaseDate = filmDto.ReleaseDate
-        };
-         
-        var result = await _dataService.UpdateFilm(filmData);
+
+        var result = await _dataService.UpdateFilm(filmCreateDto, id);
 
         if (!result.Success)
         {
@@ -107,9 +114,9 @@ public class FilmsController : ControllerBase
     [ProducesResponseType(typeof(FilmData), 201)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     [ProducesResponseType(500)]
-    public async Task<IActionResult> AddFilm([FromBody] FilmDTO filmDto)
+    public async Task<IActionResult> AddFilm([FromBody] FilmCreateDTO filmCreateDto)
     {
-        var result = await _dataService.AddFilm(filmDto);
+        var result = await _dataService.AddFilm(filmCreateDto);
 
         if (!result.Success)
         {
