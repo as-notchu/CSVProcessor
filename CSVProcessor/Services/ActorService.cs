@@ -106,6 +106,8 @@ public class ActorService(CsvContext _csvContext) : IActorResolver
 
         var actor = new Actor(actorRequestData.Name);
         
+        var errors = new List<WarningsDetails>();
+        
         var filmTitles = actorRequestData.FilmNames.Distinct().ToList();
 
         if (filmTitles.Count > 0)
@@ -115,45 +117,127 @@ public class ActorService(CsvContext _csvContext) : IActorResolver
                 .ToListAsync();
 
             actor.Films.AddRange(films);
+
+            foreach (var filmTitle in filmTitles)
+            {
+                if (!films.Exists(x => x.Title == filmTitle))
+                {
+                    errors.Add(new WarningsDetails(Operations.GetFilm, $"Film {filmTitle} not found"));
+                }
+            }
         }
+        
 
         _csvContext.Actors.Add(actor);
         await _csvContext.SaveChangesAsync();
 
-        return ServiceResult<Unit>.Ok(Unit.Value);
+        return ServiceResult<Unit>.Ok(Unit.Value, errors);
     }
 
-    /*public async Task<ServiceResult<Actor>> UpdateActor(ActorRequestDTO dto)
+    public async Task<ServiceResult<Actor>> UpdateActorInfo(Guid id, string name)
     {
-        Actor? actor;
-
-        switch (dto.Id)
-        {
-            case not null:
-                actor = await _csvContext.Actors.FirstOrDefaultAsync(x => x.Id == dto.Id);
-                break;
-            default:
-                actor = await _csvContext.Actors.FirstOrDefaultAsync(x => x.Name == dto.Name);
-                break;
-        }
-
+        var actor = await _csvContext.Actors.FirstOrDefaultAsync(x => x.Id == id);
+        
         if (actor == null)
+        {
+            return ServiceResult<Actor>.Fail(ServiceErrorCodes.NotFound, $"Actor {name} not found");
+        }
+        
+        actor.Name = name;
+
+        try
+        {
+            await _csvContext.SaveChangesAsync();
+            return ServiceResult<Actor>.Ok(actor);
+        }
+        catch (Exception e)
+        {
+            return ServiceResult<Actor>.Fail(ServiceErrorCodes.SaveFailed, $"Could not save entity. {e.Message}");
+        }
+    }
+
+    public async Task<ServiceResult<Actor>> AddActorFilms(ActorRequestDTO dto)
+    {
+        var actorResult = await GetActor(dto.Name, true, true);
+
+        if (!actorResult.Success)
         {
             return ServiceResult<Actor>.Fail(ServiceErrorCodes.NotFound, $"Actor {dto.Name} not found");
         }
+
+        var actor = actorResult.Data!;
         
-        var filmTitles = dto.FilmNames.Distinct().ToList();
-
         var films = await _csvContext.Films
-            .Where(x => filmTitles.Contains(x.Title))
-            .ToListAsync();
+            .Where(x => dto.FilmNames.Contains(x.Title))
+            .ToDictionaryAsync(x => x.Title);
 
-        var allFilms = new List<FilmData>();
-
-        foreach (var film in films)
+        foreach (var filmName in dto.FilmNames)
         {
-            
+            if (!films.ContainsKey(filmName))
+            {
+                return ServiceResult<Actor>.Fail(ServiceErrorCodes.NotFound, $"Actor {dto.Name} not found");
+            }
+        }
+        
+        actor.Films.AddRange(films.Values);
+
+        try
+        {
+            await _csvContext.SaveChangesAsync();
+            return ServiceResult<Actor>.Ok(actor);
+        }
+        catch (Exception e)
+        {
+            return ServiceResult<Actor>.Fail(ServiceErrorCodes.SaveFailed, $"Could not save entity. {e.Message}");
+        }
+    }
+
+    public async Task<ServiceResult<Actor>> RemoveActorsFilms(ActorRequestDTO dto)
+    {
+        var actorResult = await GetActor(dto.Name, true, true);
+        
+        if (!actorResult.Success)
+        {
+            return ServiceResult<Actor>.Fail(ServiceErrorCodes.NotFound, $"Actor {dto.Name} not found");
         }
 
-    } */
+        var actor = actorResult.Data!;
+        foreach (var filmName in dto.FilmNames)
+        {
+            var film = actor.Films.FirstOrDefault(x => x.Title == filmName);
+            
+            if (film == null) continue;
+            
+            actor.Films.Remove(film);
+        }
+
+        try
+        {
+            await _csvContext.SaveChangesAsync();
+            return ServiceResult<Actor>.Ok(actor);
+        }
+        catch (Exception e)
+        {
+            return ServiceResult<Actor>.Fail(ServiceErrorCodes.SaveFailed, $"Could not save entity. {e.Message}");
+        }
+    }
+
+    public async Task<ServiceResult<Actor>> RemoveActor(string name)
+    {
+        var actor = await GetActor(name, true);
+        
+        if (!actor.Success) return ServiceResult<Actor>.Fail(ServiceErrorCodes.NotFound, "Actor not found");
+        
+        _csvContext.Actors.Remove(actor.Data!);
+
+        try
+        {
+            await _csvContext.SaveChangesAsync();
+            return ServiceResult<Actor>.Ok(actor.Data!);
+        }
+        catch (Exception e)
+        {
+            return ServiceResult<Actor>.Fail(ServiceErrorCodes.SaveFailed, $"Could not save entity. {e.Message}");
+        }
+    }
 }

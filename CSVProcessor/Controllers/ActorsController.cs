@@ -29,28 +29,22 @@ public class ActorsController : ControllerBase
 
 
     [HttpGet]
-    public async Task<IActionResult> GetActors([FromRoute] bool includeFilms = false)
+    public async Task<IActionResult> GetActors([FromQuery] bool includeFilms = false)
     {
         
         var actors = await _actorService.GetAllActors(includeFilms);
 
-        if (!actors.Success)
-        {
-            return actors.ToActionResult(_logger);
-        }
+        if  (!actors.Success) actors.ToActionResult(_logger);
 
-        return Ok(actors);
+        return Ok(actors.Data);
     }
 
     [HttpGet("{name}")]
-    public async Task<IActionResult> GetActor([FromBody] string name, bool includeFilms = false )
+    public async Task<IActionResult> GetActor( string name, [FromQuery] bool includeFilms = false )
     {
         var actor = await _actorService.GetActor(name, includeFilms: includeFilms);
 
-        if (!actor.Success)
-        {
-            return actor.ToActionResult(_logger);
-        }
+        if  (!actor.Success) actor.ToActionResult(_logger);
 
         return Ok(new ActorResponseDTO(actor.Data!, includeFilms));
     }
@@ -60,11 +54,52 @@ public class ActorsController : ControllerBase
     {
         var result = await _actorService.CreateActor(actorRequestData);
 
-        if (!result.Success)
-        {
-            return result.ToActionResult(_logger);
-        }
+        if  (!result.Success) result.ToActionResult(_logger);
         
         return CreatedAtAction(nameof(GetActor), new { actorName = actorRequestData.Name }, result.Data);
     }
+
+    [HttpPut("changename/{id}")]
+    public async Task<IActionResult> ChangeActorName([FromRoute] Guid id, [FromQuery] string name)
+    {
+        
+        var result = await _actorService.UpdateActorInfo(id, name);
+
+        if  (!result.Success) result.ToActionResult(_logger);
+        
+        return CreatedAtAction(nameof(GetActor), new { actorName = name }, result.Data);
+    }
+
+    [HttpDelete("deleteactor/{name}")]
+    public async Task<IActionResult> DeleteActor([FromRoute] string name)
+    {
+        var result = await _actorService.RemoveActor(name);
+        
+        if  (!result.Success) result.ToActionResult(_logger);
+
+        return Ok(result.Data);
+    }
+
+    [HttpPut("addfilms/")]
+    public async Task<IActionResult> AddFilms([FromBody] ActorRequestDTO dto)
+    {
+
+        var result = await _actorService.AddActorFilms(dto);
+        
+        if  (!result.Success) result.ToActionResult(_logger);
+        
+        return Ok(result.Data);
+    }
+
+    [HttpPut("removefilms/")]
+    public async Task<IActionResult> RemoveFilms([FromBody] ActorRequestDTO dto)
+    {
+        var result = await _actorService.RemoveActorsFilms(dto);
+        
+        if  (!result.Success) result.ToActionResult(_logger);
+        
+        return Ok(result.Data);
+    }
+    
+    
 }
