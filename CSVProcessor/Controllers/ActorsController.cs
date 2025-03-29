@@ -46,7 +46,7 @@ public class ActorsController : ControllerBase
 
         if  (!actor.Success) actor.ToActionResult(_logger);
 
-        return Ok(new ActorResponseDTO(actor.Data!, includeFilms));
+        return Ok(actor.Data);
     }
 
     [HttpPost]
