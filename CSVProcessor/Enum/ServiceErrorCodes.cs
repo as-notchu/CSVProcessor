@@ -7,5 +7,6 @@ public enum ServiceErrorCodes
     SaveFailed = 2,
     NotFound = 3,
     CantParseData = 4,
-    Unknown = 5
+    Unknown = 5,
+    PartialFailure = 6,
 }
