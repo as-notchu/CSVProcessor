@@ -31,7 +31,9 @@ public class DataService
         
         try
         {
-            films = await _csvContext.Films.AsNoTracking().ToListAsync();
+            films = await _csvContext.Films.AsNoTracking()
+                .Include(x=> x.Actors)
+                .ToListAsync();
         }
         catch (Exception e)
         {
@@ -83,7 +85,8 @@ public class DataService
 
         if (!tracking)
             query = query.AsNoTracking();
-        if (!includeActors)
+        
+        if (includeActors)
         {
             query = query.Include(x => x.Actors);
         }
