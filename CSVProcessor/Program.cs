@@ -23,6 +23,7 @@ builder.Services.Configure<DatabaseOptions>(builder.Configuration.GetSection(nam
 
 builder.Services.AddScoped<CsvProcessService>();
 builder.Services.AddScoped<IActorResolver, ActorService>();
+builder.Services.AddScoped<ActorService>();
 
 builder.Services.AddScoped<DataService>();
 
