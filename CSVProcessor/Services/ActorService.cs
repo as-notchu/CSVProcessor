@@ -103,13 +103,13 @@ public class ActorService(CsvContext _csvContext) : IActorResolver
         return actor;
     }
 
-    public async Task<ServiceResult<Unit>> CreateActor(ActorRequestDTO actorRequestData)
+    public async Task<ServiceResult<Actor>> CreateActor(ActorRequestDTO actorRequestData)
     {
         var actorDb = await GetActor(actorRequestData.Name, true);
 
         if (actorDb.Success)
         {
-            return ServiceResult<Unit>.Fail(ServiceErrorCodes.Duplicate, $"Actor {actorRequestData.Name} found");
+            return ServiceResult<Actor>.Fail(ServiceErrorCodes.Duplicate, $"Actor {actorRequestData.Name} found");
         }
 
         var actor = new Actor(actorRequestData.Name);
@@ -139,7 +139,7 @@ public class ActorService(CsvContext _csvContext) : IActorResolver
         _csvContext.Actors.Add(actor);
         await _csvContext.SaveChangesAsync();
 
-        return ServiceResult<Unit>.Ok(Unit.Value, errors);
+        return ServiceResult<Actor>.Ok(actor, errors);
     }
 
     public async Task<ServiceResult<ActorResponseDTO>> UpdateActorInfo(Guid id, string name)
@@ -164,69 +164,51 @@ public class ActorService(CsvContext _csvContext) : IActorResolver
         }
     }
 
-    public async Task<ServiceResult<ActorResponseDTO>> AddActorFilms(ActorRequestDTO dto)
+    public async Task<ServiceResult<ActorResponseDTO>> ModifyActorsFilms(ActorRequestDTO dto)
     {
-        var actor = await PGetActor(dto.Name, true, true);
+        if (dto.Id == null) return ServiceResult<ActorResponseDTO>.Fail(ServiceErrorCodes.NotFound, $"For Modification you need ID");
+        
+        var actor = await _csvContext.Actors
+            .Include(x => x.Films)
+            .FirstOrDefaultAsync(x => x.Id == dto.Id);
 
         if (actor == null)
         {
-            return ServiceResult<ActorResponseDTO>.Fail(ServiceErrorCodes.NotFound, $"Actor {dto.Name} not found");
+            return ServiceResult<ActorResponseDTO>.Fail(ServiceErrorCodes.NotFound, $"Actor {dto.Id} not found");
         }
-        
+
         var films = await _csvContext.Films
+            .AsNoTracking()
             .Where(x => dto.FilmNames.Contains(x.Title))
             .ToDictionaryAsync(x => x.Title);
-
-        foreach (var filmName in dto.FilmNames)
+        
+        var missingFilms = dto.FilmNames.Where(name => !films.ContainsKey(name)).ToList();
+            
+        if (missingFilms.Any())
         {
-            if (!films.ContainsKey(filmName))
-            {
-                return ServiceResult<ActorResponseDTO>.Fail(ServiceErrorCodes.NotFound, $"Actor {dto.Name} not found");
-            }
+            return ServiceResult<ActorResponseDTO>.Fail(ServiceErrorCodes.NotFound, $"Films not found: {string.Join(", ", missingFilms)}");
         }
         
-        actor.Films.AddRange(films.Values);
-
+        actor.Films.Clear();
+        
+        foreach (var filmName in dto.FilmNames)
+        {
+            actor.Films.Add(films[filmName]);
+        }
+        
         try
         {
             await _csvContext.SaveChangesAsync();
-            return ServiceResult<ActorResponseDTO>.Ok(new ActorResponseDTO(actor, true));
+            return ServiceResult<ActorResponseDTO>.Ok(new ActorResponseDTO(actor));
+
         }
         catch (Exception e)
         {
             return ServiceResult<ActorResponseDTO>.Fail(ServiceErrorCodes.SaveFailed, $"Could not save entity. {e.Message}");
         }
-    }
-
-    public async Task<ServiceResult<ActorResponseDTO>> RemoveActorsFilms(ActorRequestDTO dto)
-    {
-        var actor = await PGetActor(dto.Name, true, true);
         
-        if (actor == null)
-        {
-            return ServiceResult<ActorResponseDTO>.Fail(ServiceErrorCodes.NotFound, $"Actor {dto.Name} not found");
-        }
         
-        foreach (var filmName in dto.FilmNames)
-        {
-            var film = actor.Films.FirstOrDefault(x => x.Title == filmName);
-            
-            if (film == null) continue;
-            
-            actor.Films.Remove(film);
-        }
-
-        try
-        {
-            await _csvContext.SaveChangesAsync();
-            return ServiceResult<ActorResponseDTO>.Ok(new ActorResponseDTO(actor, true));
-        }
-        catch (Exception e)
-        {
-            return ServiceResult<ActorResponseDTO>.Fail(ServiceErrorCodes.SaveFailed, $"Could not save entity. {e.Message}");
-        }
     }
-
     public async Task<ServiceResult<ActorResponseDTO>> RemoveActor(string name)
     {
         var actor = await PGetActor(name, true);
