@@ -111,6 +111,9 @@ public class ActorService(CsvContext _csvContext) : IActorResolver
         {
             return ServiceResult<Actor>.Fail(ServiceErrorCodes.Duplicate, $"Actor {actorRequestData.Name} found");
         }
+        
+        if (actorRequestData.FilmNames == null)
+            return ServiceResult<Actor>.Fail(ServiceErrorCodes.WrongInput, $"FilmNames must not be null");
 
         var actor = new Actor(actorRequestData.Name);
         
@@ -166,7 +169,9 @@ public class ActorService(CsvContext _csvContext) : IActorResolver
 
     public async Task<ServiceResult<ActorResponseDTO>> ModifyActorsFilms(ActorRequestDTO dto)
     {
-        if (dto.Id == null) return ServiceResult<ActorResponseDTO>.Fail(ServiceErrorCodes.NotFound, $"For Modification you need ID");
+        if (dto.Id == null || dto.Id == Guid.Empty) 
+            return ServiceResult<ActorResponseDTO>.Fail(ServiceErrorCodes.NotFound, $"For Modification you need ID");
+        
         
         var actor = await _csvContext.Actors
             .Include(x => x.Films)
@@ -177,6 +182,17 @@ public class ActorService(CsvContext _csvContext) : IActorResolver
             return ServiceResult<ActorResponseDTO>.Fail(ServiceErrorCodes.NotFound, $"Actor {dto.Id} not found");
         }
 
+        if (!string.Equals(dto.Name, actor.Name, StringComparison.Ordinal))
+        {
+            actor.Name = dto.Name;
+        }
+
+        if (dto.FilmNames == null)
+        {
+            await _csvContext.SaveChangesAsync();
+            return ServiceResult<ActorResponseDTO>.Ok(new ActorResponseDTO(actor));
+        }
+        
         var films = await _csvContext.Films
             .AsNoTracking()
             .Where(x => dto.FilmNames.Contains(x.Title))

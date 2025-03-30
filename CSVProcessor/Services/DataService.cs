@@ -27,7 +27,7 @@ public class DataService
     
     public async Task<ServiceResult<List<FilmData>>> GetFilms()
     {
-        List<FilmData> films = new List<FilmData>();
+        List<FilmData> films;
         
         try
         {
