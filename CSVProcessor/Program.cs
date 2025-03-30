@@ -22,7 +22,7 @@ builder.Services.AddSwaggerGen();
 builder.Services.Configure<DatabaseOptions>(builder.Configuration.GetSection(nameof(DatabaseOptions)));
 
 builder.Services.AddScoped<CsvProcessService>();
-builder.Services.AddScoped<IActorResolver, ActorService>();
+
 builder.Services.AddScoped<ActorService>();
 
 builder.Services.AddScoped<DataService>();

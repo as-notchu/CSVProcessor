@@ -1,6 +1,6 @@
 using CSVProcessor.Database;
 using CSVProcessor.Enum;
-using CSVProcessor.Interfaces;
+
 using CSVProcessor.Models;
 using CSVProcessor.Models.DTO;
 using Microsoft.EntityFrameworkCore;
@@ -13,10 +13,10 @@ public class DataService
 
     private readonly ILogger<DataService> _logger;
     
-    private readonly IActorResolver _actorResolver;
+    private readonly ActorService _actorResolver;
     
 
-    public DataService(CsvContext csvContext, ILogger<DataService> logger, IActorResolver actorResolver)
+    public DataService(CsvContext csvContext, ILogger<DataService> logger, ActorService actorResolver)
     {
         _csvContext = csvContext;
         _logger = logger;

@@ -1,7 +1,7 @@
 using System.Globalization;
 using CsvHelper;
 using CSVProcessor.Enum;
-using CSVProcessor.Interfaces;
+
 using CSVProcessor.Models;
 using CSVProcessor.Models.DTO;
 using EFCore.BulkExtensions;
@@ -17,8 +17,8 @@ public class CsvProcessService
 
     private readonly ILogger<CsvProcessService> _logger;
     
-    private readonly IActorResolver _actorResolver;
-    public CsvProcessService(CsvContext csvContext, ILogger<CsvProcessService> logger, IActorResolver actorResolver)
+    private readonly ActorService _actorResolver;
+    public CsvProcessService(CsvContext csvContext, ILogger<CsvProcessService> logger, ActorService actorResolver)
     {
         _csvContext = csvContext;
         _logger = logger;

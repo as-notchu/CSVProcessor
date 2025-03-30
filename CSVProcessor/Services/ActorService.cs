@@ -1,13 +1,12 @@
 using CSVProcessor.Database;
 using CSVProcessor.Enum;
-using CSVProcessor.Interfaces;
 using CSVProcessor.Models;
 using CSVProcessor.Models.DTO;
 using Microsoft.EntityFrameworkCore;
 
 namespace CSVProcessor.Services;
 
-public class ActorService(CsvContext _csvContext) : IActorResolver
+public class ActorService(CsvContext _csvContext) 
 {
     
     public async Task<Dictionary<string, Actor>> GetOrCreateActorsAsync(List<string> actorTitles)
