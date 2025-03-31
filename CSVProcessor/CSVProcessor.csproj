@@ -29,6 +29,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <Folder Include="Intefraces\" />
       <Folder Include="Interfaces\" />
       <Folder Include="Migrations\" />
     </ItemGroup>

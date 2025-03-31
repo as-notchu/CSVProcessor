@@ -1,3 +1,5 @@
+
+
 namespace CSVProcessor.Models.DTO;
 
 public class ActorResponseDTO
@@ -26,4 +28,5 @@ public class ActorResponseDTO
         }
         
     }
+    
 }
