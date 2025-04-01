@@ -193,7 +193,6 @@ public class ActorService(CsvContext _csvContext)
         }
         
         var films = await _csvContext.Films
-            .AsNoTracking()
             .Where(x => dto.FilmNames.Contains(x.Title))
             .ToDictionaryAsync(x => x.Title);
         
