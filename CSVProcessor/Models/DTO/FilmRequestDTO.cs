@@ -4,7 +4,7 @@ using CSVProcessor.Helpers;
 
 namespace CSVProcessor.Models;
 
-public class FilmCreateDTO
+public class FilmRequestDTO
 {
     [Required]
     public string Title { get; set; }

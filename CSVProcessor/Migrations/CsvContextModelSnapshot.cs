@@ -74,6 +74,8 @@ namespace CSVProcessor.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("Budget");
+
                     b.HasIndex("Title");
 
                     b.ToTable("Films");

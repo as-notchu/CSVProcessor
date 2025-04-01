@@ -23,6 +23,9 @@ public class CsvContext : DbContext
         modelBuilder.Entity<FilmData>()
             .HasIndex(m => m.Title);
 
+        modelBuilder.Entity<FilmData>()
+            .HasIndex(m => m.Budget);
+
         modelBuilder.Entity<Actor>()
             .HasKey(a => a.Id);
 

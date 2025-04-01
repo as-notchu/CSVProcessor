@@ -14,7 +14,7 @@ public class FilmData
 
     public FilmData() { }
     
-    public FilmData(FilmCreateDTO data)
+    public FilmData(FilmRequestDTO data)
     {
         Id = Guid.NewGuid();
         Title = data.Title;

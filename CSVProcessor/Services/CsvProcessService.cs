@@ -27,7 +27,7 @@ public class CsvProcessService
 
     public async Task<ServiceResult> ProcessCsv(string filePath)
     {
-        var result = new List<FilmCreateDTO>();
+        var result = new List<FilmRequestDTO>();
         
         var streamReader = new StreamReader(filePath);
 
@@ -48,7 +48,7 @@ public class CsvProcessService
                     return ServiceResult.Fail(ServiceErrorCodes.CantParseData, "All Fields are required");
                 }
 
-                result.Add(new FilmCreateDTO()
+                result.Add(new FilmRequestDTO()
                 {
                     Title = filmTitle,
                     ReleaseDate = releaseDate,

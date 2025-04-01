@@ -7,16 +7,16 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CSVProcessor.Services;
 
-public class DataService
+public class FilmService
 {
     private readonly CsvContext _csvContext;
 
-    private readonly ILogger<DataService> _logger;
+    private readonly ILogger<FilmService> _logger;
     
     private readonly ActorService _actorResolver;
     
 
-    public DataService(CsvContext csvContext, ILogger<DataService> logger, ActorService actorResolver)
+    public FilmService(CsvContext csvContext, ILogger<FilmService> logger, ActorService actorResolver)
     {
         _csvContext = csvContext;
         _logger = logger;
@@ -44,20 +44,20 @@ public class DataService
 
     }
 
-    public async Task<ServiceResult<Guid>> AddFilm(FilmCreateDTO filmCreateData)
+    public async Task<ServiceResult<Guid>> AddFilm(FilmRequestDTO filmRequestData)
     {
-        if (await _csvContext.Films.AnyAsync(x => x.Title == filmCreateData.Title))
+        if (await _csvContext.Films.AnyAsync(x => x.Title == filmRequestData.Title))
         {
             return ServiceResult<Guid>.Fail(
                 ServiceErrorCodes.Duplicate,
-                $"Film with title '{filmCreateData.Title}' already exists.");
+                $"Film with title '{filmRequestData.Title}' already exists.");
         }
 
-        var actorTitles = filmCreateData.Actors.Distinct().ToList();
+        var actorTitles = filmRequestData.Actors.Distinct().ToList();
 
         var allActors = await _actorResolver.GetOrCreateActorsAsync(actorTitles);
 
-        var film = new FilmData(filmCreateData);
+        var film = new FilmData(filmRequestData);
         foreach (var actor in allActors)
         {
             film.Actors.Add(actor.Value);
@@ -141,9 +141,9 @@ public class DataService
 
     }
 
-    public async Task<ServiceResult<FilmData>> UpdateFilm(FilmCreateDTO filmCreateDto, Guid id)
+    public async Task<ServiceResult<FilmData>> UpdateFilm(FilmRequestDTO filmRequestDto, Guid id)
     {
-        var film = new FilmData(filmCreateDto);
+        var film = new FilmData(filmRequestDto);
         
         var filmResult = await GetFilmById(id, true, true);
 
@@ -183,5 +183,16 @@ public class DataService
         return ServiceResult<FilmData>.Ok(entity);
 
     }
+
+   /* public async Task<ServiceResult<List<FilmResponseDTO>>> FindFilmsInRange(long min, long max)
+    {
+
+        var films = await _csvContext
+            .Films
+            .Where(x => x.Budget >= min && x.Budget <= max)
+            .ToListAsync();
+
+        
+    } */
     
  }

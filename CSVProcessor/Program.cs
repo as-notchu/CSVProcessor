@@ -24,7 +24,7 @@ builder.Services.AddScoped<CsvProcessService>();
 
 builder.Services.AddScoped<ActorService>();
 
-builder.Services.AddScoped<DataService>();
+builder.Services.AddScoped<FilmService>();
 
 builder.Services.AddSwaggerGen(c =>
 {
