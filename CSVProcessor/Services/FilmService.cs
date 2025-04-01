@@ -141,7 +141,7 @@ public class FilmService
 
     }
 
-    public async Task<ServiceResult<FilmData>> UpdateFilm(FilmRequestDTO filmRequestDto, Guid id)
+    public async Task<ServiceResult<FilmResponseDTO>> UpdateFilm(FilmRequestDTO filmRequestDto, Guid id)
     {
         var film = new FilmData(filmRequestDto);
         
@@ -149,7 +149,7 @@ public class FilmService
 
         if (!filmResult.Success)
         {
-            return ServiceResult<FilmData>.Fail(filmResult.ErrorCode, filmResult.Error!);
+            return ServiceResult<FilmResponseDTO>.Fail(filmResult.ErrorCode, filmResult.Error!);
         }
         
         var entity = filmResult.Data!;
@@ -177,22 +177,44 @@ public class FilmService
         }
         catch (Exception e)
         {
-            return ServiceResult<FilmData>.Fail(ServiceErrorCodes.SaveFailed, e.Message);
+            return ServiceResult<FilmResponseDTO>.Fail(ServiceErrorCodes.SaveFailed, e.Message);
         }
         
-        return ServiceResult<FilmData>.Ok(entity);
+        return ServiceResult<FilmResponseDTO>.Ok(new FilmResponseDTO(entity));
 
     }
 
-   /* public async Task<ServiceResult<List<FilmResponseDTO>>> FindFilmsInRange(long min, long max)
-    {
+   public async Task<ServiceResult<List<FilmResponseDTO>>> FindFilmsInRange(long min, long max, bool includeActors = false)
+   {
 
-        var films = await _csvContext
-            .Films
-            .Where(x => x.Budget >= min && x.Budget <= max)
-            .ToListAsync();
+       List<FilmData> films;
+       var query = _csvContext.Films.AsQueryable();
 
-        
-    } */
+       if (includeActors)
+       {
+           query = query.Include(x => x.Actors);
+       }
+       
+       try
+       {
+           films  = await query
+               .AsNoTracking()
+               .Where(x => x.Budget >= min && x.Budget <= max)
+               .ToListAsync();
+       }
+       catch (Exception e)
+       {
+           return ServiceResult<List<FilmResponseDTO>>.Fail(ServiceErrorCodes.Unknown, e.Message);
+       }
+       
+       List<FilmResponseDTO> filmResponseDTOs = new List<FilmResponseDTO>();
+
+       foreach (var film in films)
+       {
+           filmResponseDTOs.Add(new FilmResponseDTO(film, includeActors));
+       }
+       
+       return ServiceResult<List<FilmResponseDTO>>.Ok(filmResponseDTOs);
+   } 
     
  }

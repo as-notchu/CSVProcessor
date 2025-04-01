@@ -28,7 +28,7 @@ public class FilmsController : ControllerBase
         Summary = "Returns all films",
         Description = "Returns all films as IEnumerable<FilmData>"
     )]
-    [ProducesResponseType(typeof(IEnumerable<FilmData>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(List<FilmResponseDTO>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetFilms()
     {
         var films = await _filmService.GetFilms();
@@ -53,7 +53,7 @@ public class FilmsController : ControllerBase
         Summary = "Get Film using Guid",
         Description = "Returns film with requested guid. 404 error if film was not found"
     )]
-    [ProducesResponseType(typeof(FilmData), 200)]
+    [ProducesResponseType(typeof(FilmResponseDTO), 200)]
     [ProducesResponseType(404)]
     public async Task<IActionResult> GetFilm(Guid id)
     {
@@ -91,7 +91,7 @@ public class FilmsController : ControllerBase
     )]
     [ProducesResponseType(404)]
     [ProducesResponseType(500)]
-    [ProducesResponseType(typeof(FilmData), 201)]
+    [ProducesResponseType(typeof(FilmResponseDTO), 201)]
     public async Task<IActionResult> UpdateFilm(Guid id, [FromBody] FilmRequestDTO filmRequestDto)
     {
 
@@ -111,7 +111,7 @@ public class FilmsController : ControllerBase
         Summary = "Create Film Data from DTO",
         Description = "Creates film data with DTO. Returns created film data. "
     )]
-    [ProducesResponseType(typeof(FilmData), 201)]
+    [ProducesResponseType(typeof(Guid), 201)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     [ProducesResponseType(500)]
     public async Task<IActionResult> AddFilm([FromBody] FilmRequestDTO filmRequestDto)
@@ -127,10 +127,18 @@ public class FilmsController : ControllerBase
     }
 
     [HttpGet("range")]
-    public async Task<IActionResult> GetFilmsInPriceRange([FromQuery] long min, [FromQuery] long max)
+    [SwaggerOperation(
+        Summary = "Get Films in price range"
+        )]
+    [ProducesResponseType(typeof(List<FilmResponseDTO>),  StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetFilmsInPriceRange(
+        [FromQuery] long min,
+        [FromQuery] long max, 
+        [FromQuery] bool includeActors = false)
     {
+        var result = await _filmService.FindFilmsInRange(min, max,  includeActors);
 
-        return Ok();
+        return !result.Success ? result.ToActionResult(_logger) : Ok(result.Data);
     }
 
 }
