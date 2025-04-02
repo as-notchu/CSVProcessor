@@ -9,4 +9,5 @@ public enum ServiceErrorCodes
     CantParseData = 4,
     Unknown = 5,
     PartialFailure = 6,
+    WrongInput = 7
 }

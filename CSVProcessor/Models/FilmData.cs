@@ -6,7 +6,7 @@ public class FilmData
     
     public string Title { get; set; }
     
-    public string Budget { get; set; }
+    public long Budget { get; set; }
     
     public string ReleaseDate { get; set; }
     
@@ -14,7 +14,7 @@ public class FilmData
 
     public FilmData() { }
     
-    public FilmData(FilmCreateDTO data)
+    public FilmData(FilmRequestDTO data)
     {
         Id = Guid.NewGuid();
         Title = data.Title;

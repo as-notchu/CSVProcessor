@@ -1,4 +1,3 @@
-using CSVProcessor.Interfaces;
 
 namespace CSVProcessor.Models.DTO;
 
@@ -15,7 +14,7 @@ public class FilmResponseDTO
     {
         Id = data.Id;
         Title = data.Title;
-        Budget = data.Budget;
+        Budget = data.Budget.ToString();
         ReleaseDate = data.ReleaseDate;
         foreach (var actor in data.Actors)
         {

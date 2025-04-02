@@ -1,6 +1,6 @@
 using CSVProcessor.Database;
 using CSVProcessor.Helpers;
-using CSVProcessor.Interfaces;
+
 using CSVProcessor.Models.DTO;
 using CSVProcessor.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -55,8 +55,10 @@ public class ActorsController : ControllerBase
         var result = await _actorService.CreateActor(actorRequestData);
 
         if  (!result.Success) result.ToActionResult(_logger);
+
+        var dto = new ActorResponseDTO(result.Data!, false);
         
-        return CreatedAtAction(nameof(GetActor), new { actorName = actorRequestData.Name }, result.Data);
+        return CreatedAtAction(nameof(GetActor), new { id = dto.Id}, dto);
     }
 
     [HttpPut("changename/{id}")]
@@ -70,7 +72,7 @@ public class ActorsController : ControllerBase
         return CreatedAtAction(nameof(GetActor), new { actorName = name }, result.Data);
     }
 
-    [HttpDelete("deleteactor/{name}")]
+    [HttpDelete]
     public async Task<IActionResult> DeleteActor([FromRoute] string name)
     {
         var result = await _actorService.RemoveActor(name);
@@ -80,26 +82,17 @@ public class ActorsController : ControllerBase
         return Ok(result.Data);
     }
 
-    [HttpPut("addfilms/")]
-    public async Task<IActionResult> AddFilms([FromBody] ActorRequestDTO dto)
+    [HttpPut("{id}/films")]
+    public async Task<IActionResult> ModifyFilms([FromBody] ActorRequestDTO dto)
     {
 
-        var result = await _actorService.AddActorFilms(dto);
+        var result = await _actorService.ModifyActorsFilms(dto);
         
         if  (!result.Success) result.ToActionResult(_logger);
         
         return Ok(result.Data);
     }
-
-    [HttpPut("removefilms/")]
-    public async Task<IActionResult> RemoveFilms([FromBody] ActorRequestDTO dto)
-    {
-        var result = await _actorService.RemoveActorsFilms(dto);
-        
-        if  (!result.Success) result.ToActionResult(_logger);
-        
-        return Ok(result.Data);
-    }
+    
     
     
 }

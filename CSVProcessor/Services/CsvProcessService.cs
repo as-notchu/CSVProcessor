@@ -1,7 +1,7 @@
 using System.Globalization;
 using CsvHelper;
 using CSVProcessor.Enum;
-using CSVProcessor.Interfaces;
+
 using CSVProcessor.Models;
 using CSVProcessor.Models.DTO;
 using EFCore.BulkExtensions;
@@ -17,39 +17,52 @@ public class CsvProcessService
 
     private readonly ILogger<CsvProcessService> _logger;
     
-    private readonly IActorResolver _actorResolver;
-    public CsvProcessService(CsvContext csvContext, ILogger<CsvProcessService> logger, IActorResolver actorResolver)
+    private readonly ActorService _actorResolver;
+    public CsvProcessService(CsvContext csvContext, ILogger<CsvProcessService> logger, ActorService actorResolver)
     {
         _csvContext = csvContext;
         _logger = logger;
         _actorResolver = actorResolver;
     }
 
-    public async Task<ServiceResult<bool>> ProcessCsv(string filePath)
+    public async Task<ServiceResult> ProcessCsv(string filePath)
     {
+        var result = new List<FilmRequestDTO>();
+        
         var streamReader = new StreamReader(filePath);
-        
-        var reader = new CsvReader(streamReader, CultureInfo.InvariantCulture);
-        
-        var resultDynamic = reader.GetRecords<dynamic>().ToList();
 
-        var result = new List<FilmCreateDTO>();
-        foreach (var res in resultDynamic)
+        using (var csv = new CsvReader(streamReader, CultureInfo.InvariantCulture))
         {
-            string str = res.Actors;
-            
-            result.Add(new FilmCreateDTO()
+            csv.Read();
+            csv.ReadHeader();
+
+            while (csv.Read())
             {
-                Title = res.Title,
-                Budget = res.Budget,
-                ReleaseDate = res.ReleaseDate,
-                Actors = str.Split(';', StringSplitOptions.RemoveEmptyEntries).ToList()
-            });
+                var filmTitle = csv.GetField<string?>("Title");
+                var releaseDate = csv.GetField<string?>("ReleaseDate");
+                var budget = csv.GetField<long?>("Budget");
+                var actor = csv.GetField<string?>("Actor");
+
+                if (filmTitle == null || releaseDate == null || budget == null || actor == null)
+                {
+                    return ServiceResult.Fail(ServiceErrorCodes.CantParseData, "All Fields are required");
+                }
+
+                result.Add(new FilmRequestDTO()
+                {
+                    Title = filmTitle,
+                    ReleaseDate = releaseDate,
+                    Budget = (long)budget,
+                    Actors = actor.Split(";", StringSplitOptions.RemoveEmptyEntries).ToList(),
+                });
+                
+            }
+            
         }
         
         if (result.Count == 0)
         {
-            return ServiceResult<bool>.Fail(ServiceErrorCodes.CantParseData, $"Can't parse file");
+            return ServiceResult.Fail(ServiceErrorCodes.CantParseData, $"Can't parse file");
         }
         
         List<FilmData> films = new List<FilmData>();
@@ -108,7 +121,7 @@ public class CsvProcessService
         
         await _csvContext.SaveChangesAsync();
         
-        return ServiceResult<bool>.Ok(true);
+        return ServiceResult.Ok();
         
     }
 

@@ -1,22 +1,22 @@
 using CSVProcessor.Database;
 using CSVProcessor.Enum;
-using CSVProcessor.Interfaces;
+
 using CSVProcessor.Models;
 using CSVProcessor.Models.DTO;
 using Microsoft.EntityFrameworkCore;
 
 namespace CSVProcessor.Services;
 
-public class DataService
+public class FilmService
 {
     private readonly CsvContext _csvContext;
 
-    private readonly ILogger<DataService> _logger;
+    private readonly ILogger<FilmService> _logger;
     
-    private readonly IActorResolver _actorResolver;
+    private readonly ActorService _actorResolver;
     
 
-    public DataService(CsvContext csvContext, ILogger<DataService> logger, IActorResolver actorResolver)
+    public FilmService(CsvContext csvContext, ILogger<FilmService> logger, ActorService actorResolver)
     {
         _csvContext = csvContext;
         _logger = logger;
@@ -27,7 +27,7 @@ public class DataService
     
     public async Task<ServiceResult<List<FilmData>>> GetFilms()
     {
-        List<FilmData> films = new List<FilmData>();
+        List<FilmData> films;
         
         try
         {
@@ -44,20 +44,20 @@ public class DataService
 
     }
 
-    public async Task<ServiceResult<Guid>> AddFilm(FilmCreateDTO filmCreateData)
+    public async Task<ServiceResult<Guid>> AddFilm(FilmRequestDTO filmRequestData)
     {
-        if (await _csvContext.Films.AnyAsync(x => x.Title == filmCreateData.Title))
+        if (await _csvContext.Films.AnyAsync(x => x.Title == filmRequestData.Title))
         {
             return ServiceResult<Guid>.Fail(
                 ServiceErrorCodes.Duplicate,
-                $"Film with title '{filmCreateData.Title}' already exists.");
+                $"Film with title '{filmRequestData.Title}' already exists.");
         }
 
-        var actorTitles = filmCreateData.Actors.Distinct().ToList();
+        var actorTitles = filmRequestData.Actors.Distinct().ToList();
 
         var allActors = await _actorResolver.GetOrCreateActorsAsync(actorTitles);
 
-        var film = new FilmData(filmCreateData);
+        var film = new FilmData(filmRequestData);
         foreach (var actor in allActors)
         {
             film.Actors.Add(actor.Value);
@@ -141,15 +141,15 @@ public class DataService
 
     }
 
-    public async Task<ServiceResult<FilmData>> UpdateFilm(FilmCreateDTO filmCreateDto, Guid id)
+    public async Task<ServiceResult<FilmResponseDTO>> UpdateFilm(FilmRequestDTO filmRequestDto, Guid id)
     {
-        var film = new FilmData(filmCreateDto);
+        var film = new FilmData(filmRequestDto);
         
         var filmResult = await GetFilmById(id, true, true);
 
         if (!filmResult.Success)
         {
-            return ServiceResult<FilmData>.Fail(filmResult.ErrorCode, filmResult.Error!);
+            return ServiceResult<FilmResponseDTO>.Fail(filmResult.ErrorCode, filmResult.Error!);
         }
         
         var entity = filmResult.Data!;
@@ -177,11 +177,44 @@ public class DataService
         }
         catch (Exception e)
         {
-            return ServiceResult<FilmData>.Fail(ServiceErrorCodes.SaveFailed, e.Message);
+            return ServiceResult<FilmResponseDTO>.Fail(ServiceErrorCodes.SaveFailed, e.Message);
         }
         
-        return ServiceResult<FilmData>.Ok(entity);
+        return ServiceResult<FilmResponseDTO>.Ok(new FilmResponseDTO(entity));
 
     }
+
+   public async Task<ServiceResult<List<FilmResponseDTO>>> FindFilmsInRange(long min, long max, bool includeActors = false)
+   {
+
+       List<FilmData> films;
+       var query = _csvContext.Films.AsQueryable();
+
+       if (includeActors)
+       {
+           query = query.Include(x => x.Actors);
+       }
+       
+       try
+       {
+           films  = await query
+               .AsNoTracking()
+               .Where(x => x.Budget >= min && x.Budget <= max)
+               .ToListAsync();
+       }
+       catch (Exception e)
+       {
+           return ServiceResult<List<FilmResponseDTO>>.Fail(ServiceErrorCodes.Unknown, e.Message);
+       }
+       
+       List<FilmResponseDTO> filmResponseDTOs = new List<FilmResponseDTO>();
+
+       foreach (var film in films)
+       {
+           filmResponseDTOs.Add(new FilmResponseDTO(film, includeActors));
+       }
+       
+       return ServiceResult<List<FilmResponseDTO>>.Ok(filmResponseDTOs);
+   } 
     
  }
