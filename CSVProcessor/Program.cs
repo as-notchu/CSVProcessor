@@ -64,12 +64,6 @@ builder.Host.UseSerilog(Log.Logger);
 
 
 var app = builder.Build();
-
-app.MapControllers();
-
-
-app.UseSwagger();
-
-app.UseSwaggerUI();
+ 
 
 app.Run();

@@ -1,7 +1,6 @@
 
 using CSVProcessor.Helpers;
 using CSVProcessor.Models;
-using CSVProcessor.Models.DTO;
 using CSVProcessor.Services;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
@@ -13,39 +12,27 @@ namespace CSVProcessor.Controllers;
 public class FilmsController : ControllerBase
 {
     private readonly ILogger<FilmsController> _logger;
+    
+    private readonly FilmService _dataService;
+    
 
-    private readonly FilmService _filmService;
-
-
-    public FilmsController(ILogger<FilmsController> logger, FilmService filmService)
+    public FilmsController(ILogger<FilmsController> logger, FilmService dataService)
     {
         _logger = logger;
-        _filmService = filmService;
+        _dataService = dataService;
     }
-
+    
     [HttpGet]
     [SwaggerOperation(
         Summary = "Returns all films",
         Description = "Returns all films as IEnumerable<FilmData>"
-    )]
-    [ProducesResponseType(typeof(List<FilmResponseDTO>), StatusCodes.Status200OK)]
+        )]
+    [ProducesResponseType(typeof(IEnumerable<FilmData>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetFilms()
     {
-        var films = await _filmService.GetFilms();
-
-        if (!films.Success)
-        {
-            return films.ToActionResult(_logger);
-        }
-
-        List<FilmResponseDTO> filmDTOs = new List<FilmResponseDTO>();
-
-        foreach (var film in films.Data!)
-        {
-            filmDTOs.Add(new FilmResponseDTO(film));
-        }
-
-        return Ok(filmDTOs);
+        var films = await _dataService.GetFilms();
+            
+        return Ok(films);
     }
 
     [HttpGet("{id}")]
@@ -53,19 +40,17 @@ public class FilmsController : ControllerBase
         Summary = "Get Film using Guid",
         Description = "Returns film with requested guid. 404 error if film was not found"
     )]
-    [ProducesResponseType(typeof(FilmResponseDTO), 200)]
+    [ProducesResponseType(typeof(FilmData), 200)]
     [ProducesResponseType(404)]
     public async Task<IActionResult> GetFilm(Guid id)
     {
-        var filmDto = await _filmService.GetFilmById(id, includeActors: true);
+        var film = await _dataService.GetFilmById(id);
 
-        if (filmDto.Data == null)
+        if (film == null)
         {
-            return filmDto.ToActionResult(_logger);
+            return NotFound($"Film with ID {id} not found");
         }
-
-        var film = new FilmResponseDTO(filmDto.Data);
-
+            
         return Ok(film);
     }
 
@@ -74,11 +59,11 @@ public class FilmsController : ControllerBase
         Summary = "Delete Film using Guid",
         Description = "Deletes film with requested guid")]
     [ProducesResponseType(typeof(Unit), 200)]
-    [ProducesResponseType(404)]
+    [ProducesResponseType( 404)]
     public async Task<IActionResult> DeleteFilm(Guid id)
     {
 
-        var result = await _filmService.DeleteFilm(id);
+        var result = await _dataService.DeleteFilm(id);
 
         return result.ToActionResult(_logger);
 
@@ -88,14 +73,22 @@ public class FilmsController : ControllerBase
     [SwaggerOperation(
         Summary = "Update Film Data using Guid",
         Description = "Updates film with requested guid. Returns updated film data"
-    )]
+        )]
     [ProducesResponseType(404)]
     [ProducesResponseType(500)]
-    [ProducesResponseType(typeof(FilmResponseDTO), 201)]
-    public async Task<IActionResult> UpdateFilm(Guid id, [FromBody] FilmRequestDTO filmRequestDto)
+    [ProducesResponseType(typeof(FilmData),201)]
+    public async Task<IActionResult> UpdateFilm(Guid id, [FromBody] FilmRequestDTO filmDto)
     {
-
-        var result = await _filmService.UpdateFilm(filmRequestDto, id);
+        
+        FilmData filmData = new FilmData()
+        {
+            Id = id,
+            Budget = filmDto.Budget,
+            Title =filmDto.Title,
+            ReleaseDate = filmDto.ReleaseDate
+        };
+         
+        var result = await _dataService.UpdateFilm(filmDto, id);
 
         if (!result.Success)
         {
@@ -110,13 +103,13 @@ public class FilmsController : ControllerBase
     [SwaggerOperation(
         Summary = "Create Film Data from DTO",
         Description = "Creates film data with DTO. Returns created film data. "
-    )]
-    [ProducesResponseType(typeof(Guid), 201)]
+        )]
+    [ProducesResponseType(typeof(FilmData), 201)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     [ProducesResponseType(500)]
-    public async Task<IActionResult> AddFilm([FromBody] FilmRequestDTO filmRequestDto)
+    public async Task<IActionResult> AddFilm([FromBody] FilmRequestDTO filmDto)
     {
-        var result = await _filmService.AddFilm(filmRequestDto);
+        var result = await _dataService.AddFilm(filmDto);
 
         if (!result.Success)
         {
@@ -126,19 +119,4 @@ public class FilmsController : ControllerBase
         return CreatedAtAction(nameof(GetFilm), new { id = result.Data }, result.Data);
     }
 
-    [HttpGet("range")]
-    [SwaggerOperation(
-        Summary = "Get Films in price range"
-        )]
-    [ProducesResponseType(typeof(List<FilmResponseDTO>),  StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetFilmsInPriceRange(
-        [FromQuery] long min,
-        [FromQuery] long max, 
-        [FromQuery] bool includeActors = false)
-    {
-        var result = await _filmService.FindFilmsInRange(min, max,  includeActors);
-
-        return !result.Success ? result.ToActionResult(_logger) : Ok(result.Data);
-    }
-
-}
+} 
